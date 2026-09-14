@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('api', {
   setHotkey: acc => ipcRenderer.invoke('set-hotkey', acc),
   setTheme: t => ipcRenderer.invoke('set-theme', t),
   setLang: l => ipcRenderer.invoke('set-lang', l),
+  langMenu: () => ipcRenderer.invoke('menu-lang'),
 });

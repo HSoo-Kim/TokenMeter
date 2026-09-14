@@ -64,6 +64,7 @@ async function poll(force = false) {
 }
 
 const LANGS = ['en', 'zh', 'ko'];
+const LANG_NAMES = [['en', 'English'], ['zh', '中文'], ['ko', '한국어']];
 function trayMenu() {
   const t = i18n(cfg.lang);
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -180,6 +181,9 @@ function setHotkey(acc) {
 ipcMain.handle('set-hotkey', (_, acc) => setHotkey(acc));
 ipcMain.handle('set-theme', (_, t) => { cfg.theme = t === 'light' ? 'light' : 'dark'; saveCfg(); push(); });
 ipcMain.handle('set-lang', (_, l) => { if (LANGS.includes(l)) { cfg.lang = l; saveCfg(); push(); } });
+ipcMain.handle('menu-lang', () => popup(LANG_NAMES.map(([id, label]) => ({
+  label, type: 'radio', checked: cfg.lang === id, click: () => { cfg.lang = id; saveCfg(); push(); },
+}))));
 ipcMain.handle('refresh', () => poll(true));
 ipcMain.handle('hide', () => win.hide());
 ipcMain.handle('resize', (_, h) => place(h));

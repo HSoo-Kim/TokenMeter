@@ -33,7 +33,8 @@
     display: grid; place-items: center; cursor: pointer; font-size: 15px; line-height: 1;
   }
   .ib:hover { background: var(--card-hi); color: var(--fg); }
-  #lang { font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+  #lang { width: auto; padding: 0 5px 0 7px; gap: 1px; grid-auto-flow: column; font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+  #lang .caret { width: 11px; height: 11px; stroke-width: 2.4; opacity: .75; }
   .ib.spin svg { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -80,7 +81,7 @@
 <div class="shell">
   <header>
     <h1>TokenMeter <span id="sub"></span></h1>
-    <button class="ib" id="lang" title="Language"></button>
+    <button class="ib" id="lang" title="Language"><span id="langMark"></span><svg class="caret" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></button>
     <button class="ib" id="theme" title="Theme"></button>
     <button class="ib" id="add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="ib" id="refresh"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
@@ -160,7 +161,7 @@
     lang = LANGS.includes(l) ? l : 'en';
     T = I18N[lang];
     document.documentElement.lang = lang;
-    $('#lang').textContent = T.langMark;
+    $('#langMark').textContent = T.langMark;
     $('#hotkeyLabel').textContent = T.openClose;
     hk.title = T.hotkeyHint;
     $('#add').title = T.addTitle; $('#refresh').title = T.refreshTitle; $('#close').title = T.closeTitle;
@@ -173,7 +174,7 @@
   setInterval(render, 30000);
 
   $('#theme').onclick = () => api.setTheme(theme === 'dark' ? 'light' : 'dark');
-  $('#lang').onclick = () => api.setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length]);
+  $('#lang').onclick = () => api.langMenu();
   $('#refresh').onclick = () => { $('#refresh').classList.add('spin'); api.refresh(); };
   $('#add').onclick = () => api.addMenu();
   $('#close').onclick = () => api.hide();
