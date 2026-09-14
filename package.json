@@ -1,0 +1,13 @@
+{
+  "name": "tokenmeter",
+  "version": "1.0.0",
+  "description": "Windows tray monitor for Codex and Claude subscription quota",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^44.3.0"
+  },
+  "license": "MIT"
+}
