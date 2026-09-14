@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('api', {
   setTheme: t => ipcRenderer.invoke('set-theme', t),
   setLang: l => ipcRenderer.invoke('set-lang', l),
   langMenu: () => ipcRenderer.invoke('menu-lang'),
+  reorder: ids => ipcRenderer.invoke('reorder', ids),
 });

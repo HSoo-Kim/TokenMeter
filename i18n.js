@@ -2,6 +2,7 @@
 // table in index.html since it can't require() this — see the I18N object there.
 const STRINGS = {
   en: {
+    moveUp: 'Move up', moveDown: 'Move down',
     left: 'left', loginRequired: 'Login required',
     fiveHour: '5-hour', weekly: 'Weekly',
     apiKeyMode: 'API key mode (no subscription quota)',
@@ -20,6 +21,7 @@ const STRINGS = {
     hotkeyFailed: 'Registration failed · already used by another app',
   },
   zh: {
+    moveUp: '上移', moveDown: '下移',
     left: '剩余', loginRequired: '需要登录',
     fiveHour: '5 小时', weekly: '每周',
     apiKeyMode: 'API key 模式(无订阅额度)',
@@ -38,6 +40,7 @@ const STRINGS = {
     hotkeyFailed: '注册失败 · 已被其他应用占用',
   },
   ko: {
+    moveUp: '위로 이동', moveDown: '아래로 이동',
     left: '남음', loginRequired: '로그인 필요',
     fiveHour: '5시간', weekly: '주간',
     apiKeyMode: 'API key 모드 (구독 쿼터 없음)',

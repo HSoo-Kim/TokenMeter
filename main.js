@@ -162,6 +162,7 @@ function addAccount(type) {
   const a = { id: `${type}-${n}`, type, home: `~/.${type}-${n}` };
   cfg.accounts.push(a); saveCfg(); poll(true); login(a);
 }
+const move = (from, to) => { cfg.accounts.splice(to, 0, ...cfg.accounts.splice(from, 1)); saveCfg(); push(); };
 const popup = template => { suppressHide = true; Menu.buildFromTemplate(template).popup({ window: win, callback: () => { suppressHide = false; } }); };
 
 // ---- autostart -----------------------------------------------------------------
@@ -182,6 +183,12 @@ function setHotkey(acc) {
 ipcMain.handle('set-hotkey', (_, acc) => setHotkey(acc));
 ipcMain.handle('set-theme', (_, t) => { cfg.theme = t === 'light' ? 'light' : 'dark'; saveCfg(); push(); });
 ipcMain.handle('set-lang', (_, l) => { if (LANGS.includes(l)) { cfg.lang = l; saveCfg(); push(); } });
+ipcMain.handle('reorder', (_, ids) => {          // ids: the account order the drag ended on
+  const byId = new Map(cfg.accounts.map(a => [a.id, a]));
+  const next = ids.map(id => byId.get(id)).filter(Boolean);
+  for (const a of cfg.accounts) if (!ids.includes(a.id)) next.push(a);
+  cfg.accounts = next; saveCfg(); push();
+});
 ipcMain.handle('menu-lang', () => popup(LANG_NAMES.map(([id, label]) => ({
   label, type: 'radio', checked: cfg.lang === id, click: () => { cfg.lang = id; saveCfg(); push(); },
 }))));
@@ -193,12 +200,16 @@ ipcMain.handle('menu-add', () => { const t = i18n(cfg.lang); popup([
   { label: t.addClaude, click: () => addAccount('claude') },
 ]); });
 ipcMain.handle('menu', (_, id) => {
-  const a = cfg.accounts.find(x => x.id === id), s = state[id] || {}, t = i18n(cfg.lang);
+  const i = cfg.accounts.findIndex(x => x.id === id), a = cfg.accounts[i], s = state[id] || {}, t = i18n(cfg.lang);
   popup([
     { label: s.loggedIn ? t.reLoginWeb : t.loginWeb, click: () => login(a) },
     { label: t.logout, enabled: !!s.loggedIn, click: () => logout(a) },
     { type: 'separator' },
     { label: t.openCredFolder, click: () => shell.openPath(providers.expand(a.home)) },
+    { type: 'separator' },
+    { label: t.moveUp, enabled: i > 0, click: () => move(i, i - 1) },
+    { label: t.moveDown, enabled: i < cfg.accounts.length - 1, click: () => move(i, i + 1) },
+    { type: 'separator' },
     { label: t.removeAccount, click: () => { cfg.accounts = cfg.accounts.filter(x => x.id !== id); saveCfg(); poll(true); } },
   ]);
 });

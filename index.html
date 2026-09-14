@@ -40,7 +40,12 @@
   svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
   .list { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 10px; cursor: grab; }
+  .card.drag {
+    cursor: grabbing; position: relative; z-index: 5; border-color: color-mix(in srgb, var(--codex) 55%, var(--line));
+    box-shadow: 0 12px 28px rgba(0,0,0,.35); transition: none;
+  }
+  .list.dragging .card:not(.drag) { opacity: .72; }
   .top { display: flex; align-items: center; gap: 10px; }
   .mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 11.5px; letter-spacing: .3px; flex: none; }
   .mark.codex { background: color-mix(in srgb, var(--codex) 14%, transparent); color: var(--codex); }
@@ -134,7 +139,7 @@
         <button class="ib" data-menu="${esc(a.id)}" title="${esc(T.menuTitle)}"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
       </div>`;
     if (!a.loggedIn) {
-      return `<div class="card">${head}<div class="empty"><span>${esc(a.error || T.loginRequired)}</span><button class="btn" data-menu="${esc(a.id)}">${esc(T.login)}</button></div></div>`;
+      return `<div class="card" data-id="${esc(a.id)}">${head}<div class="empty"><span>${esc(a.error || T.loginRequired)}</span><button class="btn" data-menu="${esc(a.id)}">${esc(T.login)}</button></div></div>`;
     }
     const wins = (a.windows || []).map(w => {
       const left = Math.max(0, Math.min(100, 100 - w.usedPct));
@@ -143,9 +148,10 @@
         <div class="val"><b data-left="${esc(T.left)}">${Math.round(left)}%</b><small>${esc(T.resetsIn(until(w.resetsAt)))}</small></div></div>`;
     }).join('') || (a.error ? '' : `<div class="empty"><span>${esc(T.noUsage)}</span></div>`);
     const note = a.error ? `<div class="note ${a.soft ? '' : 'err'}">${esc(a.error)}</div>` : '';
-    return `<div class="card">${head}<div class="wins">${wins}</div>${note}</div>`;
+    return `<div class="card" data-id="${esc(a.id)}">${head}<div class="wins">${wins}</div>${note}</div>`;
   }
   function render() {
+    if (drag) return;                            // never rebuild the list while a card is held
     $('#list').innerHTML = data.map(card).join('');
     const ts = Math.max(0, ...data.map(a => a.updatedAt || 0));
     $('#updated').textContent = ts ? T.updated(new Date(ts).toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' })) : T.loading;
@@ -178,7 +184,65 @@
   $('#refresh').onclick = () => { $('#refresh').classList.add('spin'); api.refresh(); };
   $('#add').onclick = () => api.addMenu();
   $('#close').onclick = () => api.hide();
-  $('#list').addEventListener('click', e => { const b = e.target.closest('[data-menu]'); if (b) api.menu(b.dataset.menu); });
+  $('#list').addEventListener('click', e => {
+    if (dragged) return;                       // the pointerup that ended a drag must not open a menu
+    const b = e.target.closest('[data-menu]');
+    if (b) api.menu(b.dataset.menu);
+  });
+
+  // ---- drag a card to reorder: the card moves in the DOM as you pass a neighbour's midpoint ----
+  const list = $('#list');
+  let drag = null, dragged = false;
+  const cardOrder = () => [...list.children].map(c => c.dataset.id);
+
+  list.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    const card = e.target.closest('.card');
+    if (!card || list.children.length < 2) return;
+    drag = { card, startY: e.clientY, dy: 0 };
+    dragged = false;
+    try { list.setPointerCapture(e.pointerId); } catch {}   // synthetic pointers have no capture
+  });
+
+  list.addEventListener('pointermove', e => {
+    if (!drag) return;
+    drag.dy = e.clientY - drag.startY;
+    if (!dragged) {
+      if (Math.abs(drag.dy) < 4) return;       // ignore the jitter of an ordinary click
+      dragged = true;
+      drag.card.classList.add('drag');
+      list.classList.add('dragging');
+    }
+    drag.card.style.transform = `translateY(${drag.dy}px)`;
+
+    const mid = drag.card.getBoundingClientRect().top + drag.card.offsetHeight / 2;
+    const before = [...list.children].find(c => c !== drag.card && mid < c.getBoundingClientRect().top + c.offsetHeight / 2);
+    const anchor = before ?? null;
+    if (anchor !== drag.card.nextElementSibling) {
+      const top = drag.card.getBoundingClientRect().top;
+      list.insertBefore(drag.card, anchor);
+      // the card just jumped to a new slot: rebase so it stays under the cursor
+      drag.startY += drag.card.getBoundingClientRect().top - top + drag.dy;
+      drag.dy = e.clientY - drag.startY;
+      drag.card.style.transform = `translateY(${drag.dy}px)`;
+    }
+  });
+
+  const endDrag = e => {
+    if (!drag) return;
+    const { card } = drag;
+    drag = null;
+    card.style.transform = '';
+    card.classList.remove('drag');
+    list.classList.remove('dragging');
+    try { if (e?.pointerId != null && list.hasPointerCapture(e.pointerId)) list.releasePointerCapture(e.pointerId); } catch {}
+    if (dragged) {
+      api.reorder(cardOrder());
+      setTimeout(() => { dragged = false; }, 0);   // let this pointerup's click be swallowed first
+    }
+  };
+  list.addEventListener('pointerup', endDrag);
+  list.addEventListener('pointercancel', endDrag);
 
   // ---- hotkey recorder: click the chip, press a combo (needs Ctrl/Alt/Shift), Esc cancels ----
   const hk = $('#hotkey');

@@ -10,7 +10,7 @@ A tiny Windows tray app that shows how much of your Codex and Claude subscriptio
 - The tray icon is a ring gauge for the most-used window: green < 50%, amber < 80%, red above
 - Refreshes every 60 s and starts with Windows (both configurable)
 - Dark / light theme, English / 中文 / 한국어 — switch from the header
-- Multiple accounts of the same provider side by side
+- Multiple accounts of the same provider side by side, dragged into whatever order you like
 
 ## Install
 
@@ -70,6 +70,7 @@ that account's CLI credential folder:
 }
 ```
 
+- Drag a card up or down to reorder the list; the order is saved. The `⋯` menu also has Move up / Move down
 - `⋯` on a card: log in (opens the provider's web OAuth flow), log out, open the credential folder, remove
 - `+` in the header: add an account, which creates a new folder such as `~/.codex-2` and logs in there
 - Logging in runs `codex login` / `claude auth login` with `CODEX_HOME` / `CLAUDE_CONFIG_DIR` pointed at that folder,
