@@ -10,7 +10,8 @@ app.setName('TokenMeter');
 if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- config ---------------------------------------------------------------
-const CFG_FILE = path.join(__dirname, 'config.json');
+// userData, because __dirname is inside the read-only asar in a packaged build
+const CFG_FILE = path.join(app.getPath('userData'), 'config.json');
 const DEFAULT_CFG = {
   hotkey: 'Ctrl+Alt+U',
   theme: 'dark',
@@ -64,7 +65,7 @@ async function poll(force = false) {
 }
 
 const LANGS = ['en', 'zh', 'ko'];
-const LANG_NAMES = [['en', 'English'], ['zh', '中文'], ['ko', '한국어']];
+const LANG_NAMES = [['ko', '한국어'], ['en', 'English'], ['zh', '中文']]; // dropdown order
 function trayMenu() {
   const t = i18n(cfg.lang);
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -164,7 +165,7 @@ function addAccount(type) {
 const popup = template => { suppressHide = true; Menu.buildFromTemplate(template).popup({ window: win, callback: () => { suppressHide = false; } }); };
 
 // ---- autostart -----------------------------------------------------------------
-const loginItem = { path: process.execPath, args: [path.resolve(__dirname)] };
+const loginItem = app.isPackaged ? { path: process.execPath, args: [] } : { path: process.execPath, args: [path.resolve(__dirname)] };
 const autostart = on => app.setLoginItemSettings({ openAtLogin: on, ...loginItem });
 const isAutostart = () => app.getLoginItemSettings(loginItem).openAtLogin;
 
@@ -208,7 +209,7 @@ app.whenReady().then(() => {
     width: W, height: 420, show: false, frame: false, transparent: true, resizable: false, movable: false,
     skipTaskbar: true, alwaysOnTop: true, webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
-  win.loadFile('index.html');
+  win.loadFile(path.join(__dirname, 'index.html'));
   win.on('blur', () => { if (!suppressHide) win.hide(); });
   win.webContents.on('did-finish-load', push);
   if (process.env.TOKENMETER_SHOT) win.webContents.on('did-finish-load', () => setTimeout(async () => { // self-check: render once, save PNG, quit

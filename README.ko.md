@@ -12,21 +12,30 @@ Codex와 Claude 구독 토큰이 얼마나 남았는지 실시간으로 보여�
 - 다크/라이트 테마, English / 中文 / 한국어. 헤더에서 전환
 - 같은 서비스의 여러 계정을 한 화면에 나란히 표시
 
-## 요구 사항
-
-- Windows 10/11, [Node.js](https://nodejs.org) 20 이상
-- 보려는 서비스의 CLI: [`codex`](https://developers.openai.com/codex/cli), [`claude`](https://docs.claude.com/en/docs/claude-code/overview)
-
 ## 설치
+
+[Releases](https://github.com/HSoo-Kim/TokenMeter/releases)에서 `TokenMeter-Setup-<버전>.exe`를 받아 실행한다.
+사용자 단위 설치라 관리자 권한을 묻지 않고 설치 폴더도 고를 수 있다. 제거는 Windows 설정 → 앱에서 하며,
+`%APPDATA%\TokenMeter`의 설정은 남는다.
+
+코드 서명을 하지 않아 처음 실행할 때 SmartScreen이 "Windows의 PC 보호" 창을 띄운다.
+**추가 정보 → 실행**을 누르면 된다.
+
+보려는 서비스의 CLI는 따로 설치돼 있어야 한다. TokenMeter가 그 CLI가 저장해 둔 자격증명을 읽기 때문이다.
+[`codex`](https://developers.openai.com/codex/cli),
+[`claude`](https://docs.claude.com/en/docs/claude-code/overview). Windows 10 또는 11이 필요하다.
+
+### 소스에서 실행
 
 ```
 git clone https://github.com/HSoo-Kim/TokenMeter.git
 cd TokenMeter
 npm install
-npm start
+npm start        # 실행
+npm run dist     # dist/TokenMeter-Setup-<버전>.exe 생성
 ```
 
-`TokenMeter.cmd`로도 똑같이 실행된다.
+이 방식은 [Node.js](https://nodejs.org) 20 이상이 필요하다. `TokenMeter.cmd`는 `npm start`와 같다.
 
 ## 사용량을 읽는 방식
 
@@ -42,7 +51,8 @@ Claude는 모델별 주간 한도도 내려주므로, API가 값을 주는 동�
 
 ## 계정
 
-`config.json`의 항목 하나가 계정 하나이고, `home`은 그 계정의 CLI 자격증명 폴더다.
+설정은 `%APPDATA%\TokenMeter\config.json`에 저장된다. 항목 하나가 계정 하나이고, `home`은 그 계정의
+CLI 자격증명 폴더다.
 
 ```json
 {
@@ -69,7 +79,7 @@ Claude는 모델별 주간 한도도 내려주므로, API가 값을 주는 동�
 테마, 언어, 단축키는 앱에서 바꾸면 `config.json`에 저장된다. 하단 단축키 칩을 클릭하면 새 조합을 녹화한다.
 Ctrl / Alt / Shift 중 하나는 반드시 포함해야 하고 `Esc`로 취소한다. 다른 앱이 이미 쓰는 조합이면 기존 값을 유지한다.
 
-`config.json`을 직접 고칠 때는 앱을 먼저 종료(트레이 메뉴 → 종료)한 뒤 수정하고 다시 실행한다.
+트레이 메뉴의 "설정 파일 열기"로 해당 파일을 바로 열 수 있다. 직접 고칠 때는 앱을 먼저 종료(트레이 메뉴 → 종료)한 뒤 수정하고 다시 실행한다.
 
 ## 개발
 

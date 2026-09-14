@@ -4,10 +4,51 @@
   "description": "Windows tray monitor for Codex and Claude subscription quota",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "icon": "node build/make-icon.js",
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "^44.3.0"
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "build": {
+    "appId": "com.hsookim.tokenmeter",
+    "productName": "TokenMeter",
+    "copyright": "Copyright (c) 2026 HSoo-Kim",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "providers.js",
+      "i18n.js",
+      "index.html",
+      "LICENSE"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "TokenMeter-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TokenMeter",
+      "deleteAppDataOnUninstall": false
+    }
+  }
 }

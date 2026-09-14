@@ -12,21 +12,31 @@ A tiny Windows tray app that shows how much of your Codex and Claude subscriptio
 - Dark / light theme, English / 中文 / 한국어 — switch from the header
 - Multiple accounts of the same provider side by side
 
-## Requirements
-
-- Windows 10/11, [Node.js](https://nodejs.org) 20+
-- The CLI for each provider you want to track: [`codex`](https://developers.openai.com/codex/cli), [`claude`](https://docs.claude.com/en/docs/claude-code/overview)
-
 ## Install
+
+Download `TokenMeter-Setup-<version>.exe` from [Releases](https://github.com/HSoo-Kim/TokenMeter/releases)
+and run it. It installs per user, so Windows asks for no administrator rights, and you can choose the
+install folder. Uninstall from Windows Settings → Apps; your settings in `%APPDATA%\TokenMeter` are kept.
+
+The installer is unsigned, so SmartScreen shows "Windows protected your PC" on first run:
+choose **More info → Run anyway**.
+
+You still need the CLI of each provider you want to track, because TokenMeter reads the credentials they
+store: [`codex`](https://developers.openai.com/codex/cli),
+[`claude`](https://docs.claude.com/en/docs/claude-code/overview). Windows 10 or 11 is required.
+
+### From source
 
 ```
 git clone https://github.com/HSoo-Kim/TokenMeter.git
 cd TokenMeter
 npm install
-npm start
+npm start        # run it
+npm run dist     # build dist/TokenMeter-Setup-<version>.exe
 ```
 
-`TokenMeter.cmd` launches it the same way from Explorer or a shortcut.
+[Node.js](https://nodejs.org) 20+ is required for this path. `TokenMeter.cmd` starts the app the same way
+`npm start` does.
 
 ## How it reads your quota
 
@@ -43,7 +53,8 @@ Claude reports per-model weekly limits too, so a `Weekly Opus` row appears whene
 
 ## Accounts
 
-One entry in `config.json` is one account, and `home` is that account's CLI credential folder:
+Settings live in `%APPDATA%\TokenMeter\config.json`. One entry there is one account, and `home` is
+that account's CLI credential folder:
 
 ```json
 {
@@ -71,7 +82,8 @@ Theme, language and hotkey are changed in the app and saved to `config.json`. Th
 records a new combination: click it, press the keys (one of Ctrl / Alt / Shift is required), `Esc` cancels.
 If another app already owns the combination, the old one is kept.
 
-Edit `config.json` by hand only while the app is closed (tray menu → Quit), then start it again.
+The tray menu has **Open config.json** if you want to edit it by hand; do that with the app closed
+(tray menu → Quit), then start it again.
 
 ## Development
 

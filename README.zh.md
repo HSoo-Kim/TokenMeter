@@ -12,21 +12,30 @@
 - 深色／浅色主题，English / 中文 / 한국어，都在标题栏切换
 - 同一服务的多个账号可并排显示
 
-## 环境要求
-
-- Windows 10/11、[Node.js](https://nodejs.org) 20+
-- 需要跟踪哪家就装哪家的 CLI：[`codex`](https://developers.openai.com/codex/cli)、[`claude`](https://docs.claude.com/en/docs/claude-code/overview)
-
 ## 安装
+
+在 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 下载 `TokenMeter-Setup-<版本>.exe` 并运行。
+安装为当前用户级别，无需管理员权限，可自选安装目录。卸载在「设置 → 应用」中进行，
+`%APPDATA%\TokenMeter` 里的配置会保留。
+
+安装包未做代码签名，首次运行时 SmartScreen 会提示「Windows 已保护你的电脑」，
+选择 **更多信息 → 仍要运行** 即可。
+
+还需要安装你想跟踪的服务的 CLI，因为 TokenMeter 读取的正是它们保存的凭据：
+[`codex`](https://developers.openai.com/codex/cli)、
+[`claude`](https://docs.claude.com/en/docs/claude-code/overview)。系统需为 Windows 10 或 11。
+
+### 从源码运行
 
 ```
 git clone https://github.com/HSoo-Kim/TokenMeter.git
 cd TokenMeter
 npm install
-npm start
+npm start        # 运行
+npm run dist     # 生成 dist/TokenMeter-Setup-<版本>.exe
 ```
 
-也可以直接运行 `TokenMeter.cmd`，效果相同。
+这种方式需要 [Node.js](https://nodejs.org) 20+。`TokenMeter.cmd` 与 `npm start` 效果相同。
 
 ## 额度是怎么读到的
 
@@ -42,7 +51,7 @@ Claude 还会返回按模型区分的每周额度，接口返回时就会多出�
 
 ## 账号
 
-`config.json` 里的一条记录就是一个账号，`home` 是该账号的 CLI 凭据文件夹：
+配置保存在 `%APPDATA%\TokenMeter\config.json`。其中一条记录就是一个账号，`home` 是该账号的 CLI 凭据文件夹：
 
 ```json
 {
@@ -69,7 +78,7 @@ Claude 还会返回按模型区分的每周额度，接口返回时就会多出�
 主题、语言和快捷键都在应用内修改，并保存到 `config.json`。底部的快捷键按钮可录制新组合：
 点击后按下按键（必须含 Ctrl / Alt / Shift 之一），`Esc` 取消。若组合已被其他应用占用，则保留原设置。
 
-手工编辑 `config.json` 前请先退出应用（托盘菜单 → 退出），改完再启动。
+托盘菜单里的「打开 config.json」可直接定位该文件；手工编辑前请先退出应用（托盘菜单 → 退出），改完再启动。
 
 ## 开发
 
