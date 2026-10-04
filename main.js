@@ -7,6 +7,10 @@ const providers = require('./providers');
 const i18n = require('./i18n');
 
 app.setName('TokenMeter');
+// A GPU-composited transparent window stops painting after the session moves between
+// the physical console and Remote Desktop: Windows reports it shown, nothing reaches the
+// screen. Software compositing survives the switch, and this small panel needs no GPU.
+app.disableHardwareAcceleration();
 if (!app.requestSingleInstanceLock()) app.quit();
 
 // ---- config ---------------------------------------------------------------
