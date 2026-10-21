@@ -7,9 +7,7 @@ const providers = require('./providers');
 const i18n = require('./i18n');
 
 app.setName('TokenMeter');
-// A GPU-composited transparent window stops painting after the session moves between
-// the physical console and Remote Desktop: Windows reports it shown, nothing reaches the
-// screen. Software compositing survives the switch, and this small panel needs no GPU.
+// This small panel needs no GPU; use software rendering across display changes.
 app.disableHardwareAcceleration();
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -221,7 +219,10 @@ ipcMain.handle('menu', (_, id) => {
 // ---- boot --------------------------------------------------------------------------
 app.whenReady().then(() => {
   win = new BrowserWindow({
-    width: W, height: 420, show: false, frame: false, transparent: true, resizable: false, movable: false,
+    // A transparent native window can stop painting after an RDP session switch,
+    // even with software rendering. Keep the native surface opaque.
+    width: W, height: 420, show: false, frame: false, transparent: false, resizable: false, movable: false,
+    backgroundColor: cfg.theme === 'light' ? '#ffffff' : '#15161c',
     skipTaskbar: true, alwaysOnTop: true, webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
   win.loadFile(path.join(__dirname, 'index.html'));
