@@ -99,4 +99,7 @@ const claude = {
   },
 };
 
-module.exports = { codex, claude, expand };
+module.exports = {
+  codex, claude, gemini: require('./gemini'), 'gemini-web': require('./gemini-web'),
+  antigravity: require('./antigravity'), expand,
+};

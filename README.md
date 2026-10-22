@@ -2,7 +2,7 @@
 
 **English** · [中文](README.zh.md) · [한국어](README.ko.md)
 
-A tiny Windows tray app that shows how much of your Codex and Claude subscription quota is left, live.
+A Windows tray app showing remaining Codex, Claude, Gemini web and Antigravity quota.
 
 ![TokenMeter](docs/screenshot.png)
 
@@ -40,16 +40,36 @@ npm run dist     # build dist/TokenMeter-Setup-<version>.exe
 
 ## How it reads your quota
 
-TokenMeter never asks for a password. It reads the OAuth credentials the provider CLIs already store on
-your machine, calls the same usage endpoints the CLIs use, and refreshes an expired token in place so the
-CLI keeps working from the same file.
+Codex and Claude use the OAuth credentials their CLIs already store on your machine. Expired tokens
+are refreshed in the same file. Gemini web uses Google sign-in in an isolated TokenMeter browser session.
+Antigravity is read through its running local language server; its login credentials are not copied.
 
 | Provider | Credential file | Usage endpoint |
 |---|---|---|
 | Codex | `<home>/auth.json` | `chatgpt.com/backend-api/wham/usage` |
 | Claude | `<home>/.credentials.json` | `api.anthropic.com/api/oauth/usage` |
+| Gemini web | Isolated browser session in `<home>` | Gemini web usage GraphQL |
+| Antigravity | Running, signed-in local app | Authenticated loopback quota RPC |
+| Gemini CLI (legacy licensed Code Assist) | `<home>/oauth_creds.json` | `cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` |
 
 Claude reports per-model weekly limits too, so a `Weekly Opus` row appears whenever the API returns one.
+
+### Google accounts
+
+Use `+` to add **Gemini web** or connect **Antigravity**. These are separate quota pools, not one shared
+subscription balance. Gemini web shows the reported 5-hour and weekly limits; sign in with Google in
+the window that opens, then close it to refresh the card. Each account has its own session. Logging out
+clears only that TokenMeter session, not Chrome. Antigravity must stay running and signed in. Its shared
+local account cannot be logged out from TokenMeter. Unknown percentages or reset times are not invented.
+
+Consumer Google login for Gemini CLI ended June 18, 2026. The CLI option is for existing licensed Code
+Assist accounts, not Google AI Pro/Ultra web subscription quota. It requires the official `gemini` CLI;
+run interactive Google sign-in and complete project setup there. For each new CLI account, TokenMeter
+sets `GEMINI_CLI_HOME` to a separate base directory and reads its `.gemini/oauth_creds.json`.
+An explicit project can be set in that folder's `settings.json` as `{"tokenmeter":{"project":"project-id"}}`.
+Token refresh reads the OAuth client from the installed official CLI bundle, not from bundled credentials.
+For a nonstandard installation, set `tokenmeter.cliPath` to the official Gemini CLI package directory.
+See Google's [individual-account deprecation notice](https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals).
 
 ## Accounts
 
@@ -93,6 +113,9 @@ set TOKENMETER_DEMO=1 && set TOKENMETER_SHOT=%CD%\docs\screenshot.png && npm sta
 ```
 
 Renders one frame with fake accounts, writes the PNG and exits. Drop `TOKENMETER_DEMO` to capture real data.
+
+`npm run test:providers` runs the Google provider tests. `npm run test:ui` checks real renderer/preload
+integration at short and tall desktop heights in both themes.
 
 ## License
 

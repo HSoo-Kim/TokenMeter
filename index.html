@@ -8,14 +8,14 @@
     --bg: #15161c; --card: #1d1f28; --card-hi: #23262f; --line: #2b2e3b; --track: #2c2f3d;
     --fg: #eef0f6; --mute: #8d92a6; --dim: #5d6273;
     --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
-    --codex: #a5b4fc; --claude: #e8916f; --lbl: #ffb04a;
+    --codex: #a5b4fc; --claude: #e8916f; --gemini: #8ab4f8; --lbl: #ffb04a;
     --shadow: 0 24px 64px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
   }
   :root[data-theme="light"] {
     --bg: #ffffff; --card: #f5f6f9; --card-hi: #eaecf2; --line: #e1e4ec; --track: #e3e5ec;
     --fg: #15161c; --mute: #6b7085; --dim: #979bad;
     --ok: #0ea472; --warn: #d97706; --bad: #dc3d3d;
-    --codex: #4f5fd6; --claude: #c2653f; --lbl: #d97a00;
+    --codex: #4f5fd6; --claude: #c2653f; --gemini: #2459b7; --lbl: #d97a00;
     --shadow: 0 24px 64px rgba(20,22,40,.22);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,7 +24,8 @@
     font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
     color: var(--fg); -webkit-font-smoothing: antialiased; user-select: none; overflow: hidden;
   }
-  .shell { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+  .shell { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: 100dvh; }
+  header, footer { flex-shrink: 0; }
   header { display: flex; align-items: center; gap: 6px; padding: 14px 12px 10px 18px; }
   header h1 { flex: 1; font-size: 14px; font-weight: 650; letter-spacing: .1px; }
   header h1 span { color: var(--mute); font-weight: 400; font-size: 11.5px; margin-left: 8px; }
@@ -39,7 +40,8 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-  .list { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
+  .list { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--line) var(--bg); }
+  .card { flex-shrink: 0; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 10px; cursor: grab; }
   .card.drag {
     cursor: grabbing; position: relative; z-index: 5; border-color: color-mix(in srgb, var(--codex) 55%, var(--line));
@@ -50,6 +52,7 @@
   .mark { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 11.5px; letter-spacing: .3px; flex: none; }
   .mark.codex { background: color-mix(in srgb, var(--codex) 14%, transparent); color: var(--codex); }
   .mark.claude { background: color-mix(in srgb, var(--claude) 14%, transparent); color: var(--claude); }
+  .mark.gemini, .mark.gemini-web, .mark.antigravity { background: color-mix(in srgb, var(--gemini) 14%, transparent); color: var(--gemini); }
   .who { flex: 1; min-width: 0; }
   .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .meta { color: var(--mute); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -57,7 +60,7 @@
 
   .wins { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
   .win { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
-  .lbl { color: var(--fg); font-weight: 600; font-size: 12px; min-width: 52px; }
+  .lbl { color: var(--fg); font-weight: 600; font-size: 12px; min-width: 52px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bar { height: 6px; border-radius: 999px; background: var(--track); overflow: hidden; }
   .bar i { display: block; height: 100%; border-radius: 999px; background: var(--c); transition: width .6s cubic-bezier(.2,.8,.2,1); }
   .val { text-align: right; line-height: 1.15; white-space: nowrap; }
@@ -68,6 +71,8 @@
   .note { margin-top: 8px; font-size: 11px; color: var(--warn); display: flex; gap: 6px; align-items: center; }
   .note.err { color: var(--bad); }
   .empty { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; color: var(--mute); font-size: 12px; }
+  .empty span { min-width: 0; overflow-wrap: anywhere; word-break: keep-all; }
+  .empty .btn { flex-shrink: 0; margin-left: 8px; }
   .btn { border: 1px solid var(--line); background: var(--card-hi); color: var(--fg); border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; cursor: pointer; }
   .btn:hover { filter: brightness(1.08); }
 
@@ -104,7 +109,7 @@
     const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
     return d ? `${d}${T.d} ${h}${T.h}` : h ? `${h}${T.h} ${m}${T.m}` : `${m}${T.m}`;
   };
-  const PROVIDER = { codex: ['GPT', 'Codex'], claude: ['CL', 'Claude'] };
+  const PROVIDER = { codex: ['GPT', 'Codex'], claude: ['CL', 'Claude'], gemini: ['GM', 'Gemini CLI'], 'gemini-web': ['GM', 'Gemini Web'], antigravity: ['AG', 'Antigravity'] };
   const LANGS = ['en', 'zh', 'ko'];
   const I18N = {
     en: { langMark: 'EN', connected: n => `${n} connected`, loading: 'Loading…', updated: t => `Updated ${t}`,
@@ -143,9 +148,9 @@
     }
     const wins = (a.windows || []).map(w => {
       const left = Math.max(0, Math.min(100, 100 - w.usedPct));
-      return `<div class="win" style="--c:${color(left)}"><span class="lbl">${esc(w.label)}</span>
+      return `<div class="win" style="--c:${color(left)}"><span class="lbl" title="${esc(w.label)}">${esc(w.label)}</span>
         <div class="bar"><i style="width:${left}%"></i></div>
-        <div class="val"><b data-left="${esc(T.left)}">${Math.round(left)}%</b><small>${esc(T.resetsIn(until(w.resetsAt)))}</small></div></div>`;
+        <div class="val"><b data-left="${esc(T.left)}">${Math.round(left)}%</b>${Number.isFinite(w.resetsAt) ? `<small>${esc(T.resetsIn(until(w.resetsAt)))}</small>` : ''}</div></div>`;
     }).join('') || (a.error ? '' : `<div class="empty"><span>${esc(T.noUsage)}</span></div>`);
     const note = a.error ? `<div class="note ${a.soft ? '' : 'err'}">${esc(a.error)}</div>` : '';
     return `<div class="card" data-id="${esc(a.id)}">${head}<div class="wins">${wins}</div>${note}</div>`;
@@ -156,7 +161,7 @@
     const ts = Math.max(0, ...data.map(a => a.updatedAt || 0));
     $('#updated').textContent = ts ? T.updated(new Date(ts).toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' })) : T.loading;
     $('#sub').textContent = T.connected(`${data.filter(a => a.loggedIn).length}/${data.length}`);
-    requestAnimationFrame(() => api.resize(document.querySelector('.shell').getBoundingClientRect().height + 2));
+    requestAnimationFrame(() => api.resize(document.querySelector('header').offsetHeight + list.scrollHeight + document.querySelector('footer').offsetHeight + 4));
   }
   function applyTheme(t) {
     theme = t; document.documentElement.dataset.theme = t;

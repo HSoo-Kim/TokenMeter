@@ -55,7 +55,7 @@ async function poll(force = false) {
     if (!force && notBefore[a.id] > Date.now()) return;
     const prev = state[a.id] || {};
     try {
-      state[a.id] = { ...a, ...(await providers[a.type].fetch(providers.expand(a.home), cfg.lang)), error: null, soft: false, updatedAt: Date.now() };
+      state[a.id] = { ...a, ...(await providers[a.type].fetch(providers.expand(a.home), cfg.lang)), soft: false, updatedAt: Date.now() };
     } catch (e) {
       if (e.retryAfter) notBefore[a.id] = Date.now() + e.retryAfter * 1000;
       state[a.id] = { ...a, ...prev, loggedIn: true, soft: !!e.retryAfter, error: e.retryAfter ? i18n(cfg.lang).rateLimited(e.retryAfter) : e.message };
@@ -137,9 +137,14 @@ function toggle() {
 }
 
 // ---- login / logout ----------------------------------------------------------
-function login(a) {
+async function login(a) {
   const home = providers.expand(a.home), p = providers[a.type], t = i18n(cfg.lang);
   fs.mkdirSync(home, { recursive: true });
+  if (p.login) {
+    try { await p.login(home, cfg.lang); await poll(true); }
+    catch (error) { state[a.id] = { ...a, loggedIn: false, error: error.message }; push(); }
+    return;
+  }
   spawn('cmd.exe', ['/c', 'start', `"${t.loginTitle(a.id)}"`, 'cmd', '/c', `"${p.loginCmd} & echo. & echo ${t.loginDone} & pause"`],
     { env: { ...process.env, ...p.env(home) }, detached: true, stdio: 'ignore', windowsVerbatimArguments: true }).unref();
   const f = p.credFile(home);
@@ -150,18 +155,24 @@ function login(a) {
   }, 2000);
 }
 async function logout(a) {
-  const f = providers[a.type].credFile(providers.expand(a.home)), t = i18n(cfg.lang);
+  const p = providers[a.type], home = providers.expand(a.home), f = p.credFile(home), t = i18n(cfg.lang);
   suppressHide = true;
   const { response } = await dialog.showMessageBox(win, {
     type: 'warning', buttons: [t.logoutConfirm, t.cancel], defaultId: 1, cancelId: 1,
-    message: t.logoutTitle(state[a.id]?.name || a.id), detail: t.logoutDetail(f),
+    message: t.logoutTitle(state[a.id]?.name || a.id), detail: p.logout ? t.webLogoutDetail : t.logoutDetail(f),
   });
   suppressHide = false;
-  if (response === 0) { fs.rmSync(f, { force: true }); poll(true); }
+  if (response === 0) {
+    if (p.logout) await p.logout(home);
+    else fs.rmSync(f, { force: true });
+    delete state[a.id]; delete notBefore[a.id]; poll(true);
+  }
 }
 function addAccount(type) {
+  const p = providers[type];
+  if (p.shared && cfg.accounts.some(a => a.type === type)) return login(cfg.accounts.find(a => a.type === type));
   let n = 1; while (cfg.accounts.some(a => a.id === `${type}-${n}`)) n++;
-  const a = { id: `${type}-${n}`, type, home: `~/.${type}-${n}` };
+  const a = { id: `${type}-${n}`, type, home: p.accountHome ? p.accountHome(n) : `~/.${type}-${n}` };
   cfg.accounts.push(a); saveCfg(); poll(true); login(a);
 }
 const move = (from, to) => { cfg.accounts.splice(to, 0, ...cfg.accounts.splice(from, 1)); saveCfg(); push(); };
@@ -200,12 +211,15 @@ ipcMain.handle('resize', (_, h) => place(h));
 ipcMain.handle('menu-add', () => { const t = i18n(cfg.lang); popup([
   { label: t.addCodex, click: () => addAccount('codex') },
   { label: t.addClaude, click: () => addAccount('claude') },
+  { label: t.addGeminiWeb, click: () => addAccount('gemini-web') },
+  { label: t.addGeminiCli, click: () => addAccount('gemini') },
+  { label: t.addAntigravity, click: () => addAccount('antigravity') },
 ]); });
 ipcMain.handle('menu', (_, id) => {
   const i = cfg.accounts.findIndex(x => x.id === id), a = cfg.accounts[i], s = state[id] || {}, t = i18n(cfg.lang);
   popup([
-    { label: s.loggedIn ? t.reLoginWeb : t.loginWeb, click: () => login(a) },
-    { label: t.logout, enabled: !!s.loggedIn, click: () => logout(a) },
+    { label: providers[a.type].shared ? t.openAntigravity : s.loggedIn ? t.reLoginWeb : t.loginWeb, click: () => login(a) },
+    { label: t.logout, enabled: !!s.loggedIn && !providers[a.type].shared, click: () => logout(a) },
     { type: 'separator' },
     { label: t.openCredFolder, click: () => shell.openPath(providers.expand(a.home)) },
     { type: 'separator' },
