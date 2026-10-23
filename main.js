@@ -5,6 +5,8 @@ const zlib = require('node:zlib');
 const { spawn } = require('node:child_process');
 const providers = require('./providers');
 const i18n = require('./i18n');
+const updates = require('./updates');
+const { net } = require('electron');
 
 app.setName('TokenMeter');
 // This small panel needs no GPU; use software rendering across display changes.
@@ -19,6 +21,7 @@ const DEFAULT_CFG = {
   theme: 'dark',
   lang: 'en',
   pollSeconds: 60,
+  checkForUpdates: true,
   accounts: [
     { id: 'codex-1', type: 'codex', home: '~/.codex' },
     { id: 'codex-2', type: 'codex', home: '~/.codex-2' },
@@ -33,6 +36,7 @@ if (firstRun) saveCfg();
 // ---- state / polling -------------------------------------------------------
 const state = {};     // id -> last known result
 const notBefore = {}; // id -> ms; rate-limit backoff
+let availableUpdate = null, checkingUpdate = false, installingUpdate = false, notifiedUpdate = null;
 let win, tray, polling = false, suppressHide = false;
 
 // TOKENMETER_DEMO fills the window with fake accounts, for docs screenshots
@@ -77,6 +81,14 @@ function trayMenu() {
     { label: t.trayAutostart, type: 'checkbox', checked: isAutostart(), click: m => autostart(m.checked) },
     { label: t.trayOpenConfig, click: () => shell.openPath(CFG_FILE) },
     { type: 'separator' },
+    { id: 'check-updates', label: t.trayCheckUpdates, enabled: !checkingUpdate && !installingUpdate, click: () => checkForUpdate(true) },
+    { id: 'auto-updates', label: t.trayAutoUpdates, type: 'checkbox', checked: cfg.checkForUpdates, click: m => {
+      cfg.checkForUpdates = m.checked; saveCfg(); trayMenu();
+      if (m.checked) checkForUpdate();
+    } },
+    { id: 'install-update', label: installingUpdate ? t.updateInstalling : t.trayInstallUpdate(availableUpdate?.tag || ''),
+      visible: !!availableUpdate, enabled: !installingUpdate, click: installUpdate },
+    { type: 'separator' },
     { label: t.trayQuit, click: () => app.quit() },
   ]));
 }
@@ -90,6 +102,54 @@ function push() {
   const t = i18n(cfg.lang);
   tray.setToolTip(list.map(s => `${s.name || s.id}: ${s.loggedIn ? (s.windows || []).map(w => `${w.label} ${Math.round(100 - w.usedPct)}% ${t.left}`).join(' · ') || '-' : t.loginRequired}`).join('\n'));
   trayMenu();
+}
+
+// ---- updates ---------------------------------------------------------------
+function updateNotice(content, iconType = 'info') {
+  tray.displayBalloon({ title: 'TokenMeter', content, iconType, respectQuietTime: true });
+}
+async function checkForUpdate(manual = false) {
+  if (checkingUpdate || installingUpdate || (!manual && !cfg.checkForUpdates)) return;
+  checkingUpdate = true;
+  trayMenu();
+  try {
+    availableUpdate = await updates.check(app.getVersion(), (url, init) => net.fetch(url, init));
+    const t = i18n(cfg.lang);
+    if (availableUpdate && (manual || notifiedUpdate !== availableUpdate.tag)) {
+      notifiedUpdate = availableUpdate.tag;
+      updateNotice(t.updateAvailable(availableUpdate.tag));
+    } else if (manual && !availableUpdate) updateNotice(t.updateCurrent(app.getVersion()));
+  } catch (error) {
+    console.error('Update check failed:', error.message);
+    if (manual) updateNotice(i18n(cfg.lang).updateCheckFailed, 'warning');
+  } finally {
+    checkingUpdate = false;
+    trayMenu();
+  }
+}
+async function installUpdate() {
+  if (!availableUpdate || installingUpdate) return;
+  installingUpdate = true;
+  trayMenu();
+  let restart = false;
+  try {
+    if (!app.isPackaged || !availableUpdate.installer) {
+      await shell.openExternal(availableUpdate.url);
+    } else {
+      updateNotice(i18n(cfg.lang).updateDownloading(availableUpdate.tag));
+      const file = await updates.download(availableUpdate, path.join(app.getPath('userData'), 'updates'),
+        (url, init) => net.fetch(url, init));
+      await updates.install(file, process.execPath);
+      restart = true;
+    }
+  } catch (error) {
+    console.error('Update install failed:', error.message);
+    updateNotice(i18n(cfg.lang).updateInstallFailed, 'warning');
+  } finally {
+    installingUpdate = false;
+    trayMenu();
+  }
+  if (restart) app.quit();
 }
 
 // ---- tray icon: ring gauge rendered to PNG ---------------------------------
@@ -250,6 +310,9 @@ app.whenReady().then(() => {
   tray = new Tray(icon(null));
   tray.on('click', toggle);
   trayMenu();
+
+  checkForUpdate();
+  setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
 
   if (!globalShortcut.register(cfg.hotkey, toggle)) console.error('hotkey register failed:', cfg.hotkey);
   if (firstRun) autostart(true);

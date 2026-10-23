@@ -11,6 +11,7 @@ A Windows tray app showing remaining Codex, Claude, Gemini web and Antigravity q
 - Refreshes every 60 s and starts with Windows (both configurable)
 - Dark / light theme, English / 中文 / 한국어 — switch from the header
 - Multiple accounts of the same provider side by side, dragged into whatever order you like
+- New-version notifications and one-click updates from the tray menu
 
 ## Install
 
@@ -20,6 +21,18 @@ install folder. Uninstall from Windows Settings → Apps; your settings in `%APP
 
 The installer is unsigned, so SmartScreen shows "Windows protected your PC" on first run:
 choose **More info → Run anyway**.
+
+### Updates
+
+Starting with 1.3.0, TokenMeter checks GitHub Releases at startup and every 6 hours. A new stable
+version shows a Windows notification and an **Update to v...** item in the tray's right-click menu.
+Click it to download the installer, verify its SHA-256 and size against GitHub's release metadata,
+then install and restart in the same folder. Account settings and sign-ins are kept.
+Only the update action installs anything; automatic checks do not install updates.
+The tray menu also offers **Check for updates** and an automatic-check toggle.
+Source runs or releases without a verifiable installer open the release page instead.
+
+Versions 1.2.1 and older have no updater. Install 1.3.0 manually once to receive future notifications.
 
 You still need the CLI of each provider you want to track, because TokenMeter reads the credentials they
 store: [`codex`](https://developers.openai.com/codex/cli),

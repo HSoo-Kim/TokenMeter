@@ -1,11 +1,13 @@
 {
   "name": "tokenmeter",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Windows tray monitor for Codex, Claude, Gemini and Antigravity quota",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test:providers": "node --test test-gemini.cjs test-gemini-web.cjs test-antigravity.cjs",
+    "test:updates": "node --test test-updates.cjs",
+    "test:updates-ui": "electron test-updates-ui.cjs",
     "test:ui": "electron test-gemini-ui.cjs",
     "icon": "node build/make-icon.js",
     "dist": "electron-builder --win"
@@ -31,6 +33,7 @@
       "gemini-web.js",
       "antigravity.js",
       "i18n.js",
+      "updates.js",
       "index.html",
       "LICENSE"
     ],
