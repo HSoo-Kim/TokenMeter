@@ -1,26 +1,49 @@
+<div align="center">
+
+<img src="build/icon.png" width="96" alt="TokenMeter icon">
+
 # TokenMeter
 
-**English** · [中文](README.zh.md) · [한국어](README.ko.md)
+**Your AI subscription limits, together in the Windows tray.**
 
-A Windows tray app showing remaining Codex, Claude, Gemini web and Antigravity quota.
+<p>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="Latest release"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="Total GitHub release downloads"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge" alt="MIT license"></a>
+</p>
 
-![TokenMeter](docs/screenshot.png)
+<p><b>English</b> · <a href="README.ko.md">한국어</a> · <a href="README.zh.md">中文</a></p>
 
-- Click the tray icon or press `Ctrl+Alt+U` to toggle the panel (`Esc` closes it)
-- The tray icon is a ring gauge for the most-used window: green < 50%, amber < 80%, red above
-- Refreshes every 60 s and starts with Windows (both configurable)
-- Dark / light theme, English / 中文 / 한국어 — switch from the header
-- Multiple accounts of the same provider side by side, dragged into whatever order you like
-- New-version notifications and one-click updates from the tray menu
+<img src="docs/screenshot.png" width="420" alt="TokenMeter showing example Codex, Claude, Gemini web and Antigravity quotas">
 
-## Install
+<p><sub>Example accounts and quota values. The Downloads badge counts GitHub Release asset downloads.</sub></p>
 
-Download `TokenMeter-Setup-<version>.exe` from [Releases](https://github.com/HSoo-Kim/TokenMeter/releases)
-and run it. It installs per user, so Windows asks for no administrator rights, and you can choose the
-install folder. Uninstall from Windows Settings → Apps; your settings in `%APPDATA%\TokenMeter` are kept.
+</div>
 
-The installer is unsigned, so SmartScreen shows "Windows protected your PC" on first run:
-choose **More info → Run anyway**.
+TokenMeter is a Windows tray app for checking remaining Codex, Claude, Gemini web and Antigravity
+quota without opening each service. Limits and reset times depend on what each provider returns.
+
+## At a glance
+
+| Feature | What it does |
+|---|---|
+| **One panel, separate quotas** | Shows Codex, Claude, Gemini web and Antigravity accounts together without combining their usage pools. A legacy Gemini CLI option is available for licensed Code Assist accounts. |
+| **Limits and resets** | Displays available 5-hour, weekly and model-specific limits with remaining percentages and reset times when reported. |
+| **Multiple accounts** | Add several accounts for the same service and drag their cards into order. |
+| **Always at hand** | Open from the tray or with `Ctrl+Alt+U`. The ring gauge reflects the most-used limit; quota refreshes every 60 seconds by default. |
+| **Make it yours** | Switch between dark and light themes, choose English, Korean or Chinese, change the shortcut and configure Windows startup. |
+| **Updates on your terms** | Get a new-version notification and start a verified installer from the tray menu. |
+
+## Quick Start
+
+1. On Windows 10 or 11 (x64), download `TokenMeter-Setup-<version>.exe` from the [latest release](https://github.com/HSoo-Kim/TokenMeter/releases/latest).
+2. Run the installer. It installs per user without administrator rights and lets you choose the install folder.
+3. Click the tray icon or press `Ctrl+Alt+U`; use `+` to add an account. For Codex or Claude login, install the corresponding [`codex`](https://developers.openai.com/codex/cli) or [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI.
+
+The installer is unsigned, so Windows SmartScreen may show “Windows protected your PC”: choose
+**More info → Run anyway**. Uninstall from Windows Settings → Apps; settings in `%APPDATA%\TokenMeter` are kept.
 
 ### Updates
 
@@ -33,10 +56,6 @@ The tray menu also offers **Check for updates** and an automatic-check toggle.
 Source runs or releases without a verifiable installer open the release page instead.
 
 Versions 1.2.1 and older have no updater. Install 1.3.0 manually once to receive future notifications.
-
-You still need the CLI of each provider you want to track, because TokenMeter reads the credentials they
-store: [`codex`](https://developers.openai.com/codex/cli),
-[`claude`](https://docs.claude.com/en/docs/claude-code/overview). Windows 10 or 11 is required.
 
 ### From source
 

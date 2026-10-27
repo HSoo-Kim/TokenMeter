@@ -1,26 +1,49 @@
+<div align="center">
+
+<img src="build/icon.png" width="96" alt="TokenMeter 图标">
+
 # TokenMeter
 
-[English](README.md) · **中文** · [한국어](README.ko.md)
+**在 Windows 托盘中，一览你的 AI 订阅额度。**
 
-Windows 托盘应用，显示 Codex、Claude、Gemini 网页和 Antigravity 的剩余额度。
+<p>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="下载 Windows x64 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="最新发布版本"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="GitHub Release 累计下载量"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub Stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge" alt="MIT 许可证"></a>
+</p>
 
-![TokenMeter](docs/screenshot.png)
+<p><a href="README.md">English</a> · <a href="README.ko.md">한국어</a> · <b>中文</b></p>
 
-- 点击托盘图标或按 `Ctrl+Alt+U` 打开／关闭面板（`Esc` 关闭）
-- 托盘图标是环形进度条，取用量最高的窗口：绿色 < 50%，橙色 < 80%，再高为红色
-- 每 60 秒自动刷新，开机自启动（均可配置）
-- 深色／浅色主题，English / 中文 / 한국어，都在标题栏切换
-- 同一服务的多个账号可并排显示，拖动卡片即可任意排序
-- 新版本通知，并可在托盘菜单中一键更新
+<img src="docs/screenshot.png" width="420" alt="TokenMeter 显示 Codex、Claude、Gemini 网页和 Antigravity 的示例额度">
 
-## 安装
+<p><sub>画面中的账号和额度为示例。Downloads 徽章统计 GitHub Release 文件的累计下载量。</sub></p>
 
-在 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 下载 `TokenMeter-Setup-<版本>.exe` 并运行。
-安装为当前用户级别，无需管理员权限，可自选安装目录。卸载在「设置 → 应用」中进行，
-`%APPDATA%\TokenMeter` 里的配置会保留。
+</div>
 
-安装包未做代码签名，首次运行时 SmartScreen 会提示「Windows 已保护你的电脑」，
-选择 **更多信息 → 仍要运行** 即可。
+TokenMeter 是 Windows 托盘应用，可在一处查看 Codex、Claude、Gemini 网页和 Antigravity
+的剩余额度。显示哪些额度和重置时间取决于各服务返回的数据。
+
+## 主要功能
+
+| 功能 | 说明 |
+|---|---|
+| **一个面板，独立额度** | 同时显示 Codex、Claude、Gemini 网页和 Antigravity 账号，不合并各自的额度池；也支持已有 Code Assist 许可的 Gemini CLI。 |
+| **剩余额度与重置** | 显示服务返回的 5 小时、每周及模型专属额度，以及剩余百分比和重置时间。 |
+| **多个账号** | 可添加同一服务的多个账号，拖动卡片调整顺序。 |
+| **随时查看** | 点击托盘图标或按 `Ctrl+Alt+U` 打开面板。环形图标反映使用最多的额度；默认每 60 秒刷新。 |
+| **按需设置** | 切换深色与浅色主题、中文／English／한국어，设置快捷键及开机自启动。 |
+| **自行选择更新** | 收到新版本通知后，可从托盘菜单启动已验证安装包的更新。 |
+
+## 快速开始
+
+1. 在 Windows 10 或 11（x64）上，从[最新版本](https://github.com/HSoo-Kim/TokenMeter/releases/latest)下载 `TokenMeter-Setup-<版本>.exe`。
+2. 运行安装包。应用安装在当前用户下，无需管理员权限，并可选择安装目录。
+3. 点击托盘图标或按 `Ctrl+Alt+U` 打开面板，通过 `+` 添加账号。登录 Codex 或 Claude 需安装对应的 [`codex`](https://developers.openai.com/codex/cli) 或 [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI。
+
+安装包未做代码签名，SmartScreen 可能提示“Windows 已保护你的电脑”；选择
+**更多信息 → 仍要运行**即可。卸载可在 Windows 设置 → 应用中进行，`%APPDATA%\TokenMeter` 里的配置会保留。
 
 ### 更新
 
@@ -32,10 +55,6 @@ Windows 托盘应用，显示 Codex、Claude、Gemini 网页和 Antigravity 的�
 源码运行或没有可验证安装包时，将打开发布页面。
 
 1.2.1 及更早版本没有更新功能，需先手动安装一次 1.3.0，之后才能收到通知。
-
-还需要安装你想跟踪的服务的 CLI，因为 TokenMeter 读取的正是它们保存的凭据：
-[`codex`](https://developers.openai.com/codex/cli)、
-[`claude`](https://docs.claude.com/en/docs/claude-code/overview)。系统需为 Windows 10 或 11。
 
 ### 从源码运行
 

@@ -1,26 +1,49 @@
+<div align="center">
+
+<img src="build/icon.png" width="96" alt="TokenMeter 아이콘">
+
 # TokenMeter
 
-[English](README.md) · [中文](README.zh.md) · **한국어**
+**흩어진 AI 구독 사용량을 Windows 트레이에서 한눈에.**
 
-Codex, Claude, Gemini 웹과 Antigravity의 남은 사용량을 보여주는 Windows 트레이 앱.
+<p>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Windows x64용 TokenMeter 다운로드"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="최신 릴리즈"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="GitHub 릴리즈 누적 다운로드"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub Stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-3DA639?style=for-the-badge" alt="MIT 라이선스"></a>
+</p>
 
-![TokenMeter](docs/screenshot.png)
+<p><a href="README.md">English</a> · <b>한국어</b> · <a href="README.zh.md">中文</a></p>
 
-- 트레이 아이콘 클릭 또는 `Ctrl+Alt+U`로 창 열기/닫기 (`Esc`로 닫기)
-- 트레이 아이콘은 가장 많이 쓴 윈도우 기준 링 게이지. 초록 < 50%, 주황 < 80%, 그 이상 빨강
-- 60초마다 자동 갱신, Windows 시작 시 자동 실행 (둘 다 설정 가능)
-- 다크/라이트 테마, English / 中文 / 한국어. 헤더에서 전환
-- 같은 서비스의 여러 계정을 한 화면에 나란히 표시. 카드를 끌어 순서 변경
-- 새 버전 알림과 트레이 메뉴에서 한 번 눌러 업데이트
+<img src="docs/screenshot.png" width="420" alt="Codex, Claude, Gemini 웹, Antigravity 예시 사용량을 표시하는 TokenMeter">
 
-## 설치
+<p><sub>화면의 계정과 사용량은 예시입니다. Downloads 배지는 GitHub 릴리즈 파일의 누적 다운로드 횟수입니다.</sub></p>
 
-[Releases](https://github.com/HSoo-Kim/TokenMeter/releases)에서 `TokenMeter-Setup-<버전>.exe`를 받아 실행한다.
-사용자 단위 설치라 관리자 권한을 묻지 않고 설치 폴더도 고를 수 있다. 제거는 Windows 설정 → 앱에서 하며,
-`%APPDATA%\TokenMeter`의 설정은 남는다.
+</div>
 
-코드 서명을 하지 않아 처음 실행할 때 SmartScreen이 "Windows의 PC 보호" 창을 띄운다.
-**추가 정보 → 실행**을 누르면 된다.
+TokenMeter는 Codex, Claude, Gemini 웹과 Antigravity의 남은 사용량을 한곳에서 확인하는
+Windows 트레이 앱입니다. 표시되는 한도와 초기화 시각은 각 서비스가 반환하는 정보에 따라 달라집니다.
+
+## 주요 기능
+
+| 기능 | 설명 |
+|---|---|
+| **한 화면, 서로 다른 한도** | Codex, Claude, Gemini 웹과 Antigravity 계정을 함께 보여 주되 사용량 풀은 합치지 않습니다. 기존 Code Assist 라이선스용 Gemini CLI도 지원합니다. |
+| **잔여량과 초기화** | 서비스가 제공하는 5시간·주간·모델별 한도의 남은 비율과 초기화 시각을 표시합니다. |
+| **여러 계정** | 같은 서비스의 계정을 여러 개 추가하고 카드를 끌어 순서를 바꿀 수 있습니다. |
+| **트레이에서 바로 확인** | 트레이 아이콘 또는 `Ctrl+Alt+U`로 열고 닫습니다. 링 게이지는 가장 많이 사용한 한도를 나타내며, 기본 60초마다 갱신합니다. |
+| **내 취향에 맞게** | 다크·라이트 테마, 한국어·영어·중국어, 단축키와 Windows 시작 시 실행을 설정할 수 있습니다. |
+| **직접 선택하는 업데이트** | 새 버전 알림을 받고 트레이 메뉴에서 검증된 설치 파일의 업데이트를 시작합니다. |
+
+## 빠른 시작
+
+1. Windows 10 또는 11(x64)에서 [최신 릴리즈](https://github.com/HSoo-Kim/TokenMeter/releases/latest)의 `TokenMeter-Setup-<버전>.exe`를 받습니다.
+2. 설치 파일을 실행합니다. 사용자 단위 설치라 관리자 권한이 필요 없으며 설치 폴더를 선택할 수 있습니다.
+3. 트레이 아이콘이나 `Ctrl+Alt+U`로 창을 열고 `+`에서 계정을 추가합니다. Codex 또는 Claude에 로그인하려면 해당 [`codex`](https://developers.openai.com/codex/cli) 또는 [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI를 설치합니다.
+
+설치 파일은 코드 서명이 없어 SmartScreen이 “Windows의 PC 보호”를 표시할 수 있습니다.
+**추가 정보 → 실행**을 선택하면 됩니다. 제거는 Windows 설정 → 앱에서 하며 `%APPDATA%\TokenMeter`의 설정은 남습니다.
 
 ### 업데이트
 
@@ -33,10 +56,6 @@ Codex, Claude, Gemini 웹과 Antigravity의 남은 사용량을 보여주는 Win
 소스 실행 중이거나 검증 가능한 설치 파일이 없는 릴리즈는 릴리즈 페이지를 연다.
 
 1.2.1 이하는 업데이트 기능이 없으므로 1.3.0을 한 번 직접 설치해야 이후 알림을 받을 수 있다.
-
-보려는 서비스의 CLI는 따로 설치돼 있어야 한다. TokenMeter가 그 CLI가 저장해 둔 자격증명을 읽기 때문이다.
-[`codex`](https://developers.openai.com/codex/cli),
-[`claude`](https://docs.claude.com/en/docs/claude-code/overview). Windows 10 또는 11이 필요하다.
 
 ### 소스에서 실행
 
