@@ -7,9 +7,9 @@
 **흩어진 AI 구독 사용량을 Windows 트레이와 macOS 메뉴 막대에서 한눈에.**
 
 <p>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Windows x64용 TokenMeter 다운로드"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="Apple silicon Mac용 TokenMeter 다운로드"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="Intel Mac용 TokenMeter 다운로드"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Windows x64용 TokenMeter 다운로드"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="Apple silicon Mac용 TokenMeter 다운로드"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="Intel Mac용 TokenMeter 다운로드"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="최신 릴리즈"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="GitHub 릴리즈 누적 다운로드"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub Stars"></a>
@@ -42,18 +42,18 @@ Windows 트레이 및 macOS 메뉴 막대 앱입니다. 표시되는 한도와 �
 
 | 플랫폼 | 파일 |
 |---|---|
-| Windows 10 / 11 (x64) | [TokenMeter-Setup-1.4.0.exe](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe) |
-| macOS 13 이상 · Apple silicon | [TokenMeter-1.4.0-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg) |
-| macOS 13 이상 · Intel | [TokenMeter-1.4.0-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg) |
+| Windows 10 / 11 (x64) | [TokenMeter-Setup.exe](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe) |
+| macOS 13 이상 · Apple silicon | [TokenMeter-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg) |
+| macOS 13 이상 · Intel | [TokenMeter-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg) |
 
 Mac 종류는 Apple 메뉴 → **이 Mac에 관하여**에서 확인할 수 있습니다. Apple 칩이면 Apple silicon, Intel 프로세서면 Intel입니다.
-모든 버전과 파일은 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 페이지에 있으며, 설치 후에는 새 버전이 나오면 앱이 알려 줍니다.
+이 링크는 항상 최신 릴리즈를 받습니다. 모든 버전과 파일은 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 페이지에 있으며, 설치 후에는 새 버전이 나오면 앱이 알려 줍니다.
 
 ## 빠른 시작
 
 ### Windows
 
-1. Windows 10 또는 11(x64)에서 [다운로드](#다운로드)의 `TokenMeter-Setup-1.4.0.exe`를 받습니다.
+1. Windows 10 또는 11(x64)에서 [다운로드](#다운로드)의 `TokenMeter-Setup.exe`를 받습니다.
 2. 설치 파일을 실행합니다. 사용자 단위 설치라 관리자 권한이 필요 없으며 설치 폴더를 선택할 수 있습니다.
 3. 트레이 아이콘이나 `Ctrl+Alt+U`로 창을 열고 `+`에서 계정을 추가합니다. Codex 또는 Claude에 로그인하려면 해당 [`codex`](https://developers.openai.com/codex/cli) 또는 [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI를 설치합니다.
 
@@ -187,6 +187,14 @@ TOKENMETER_DEMO=1 TOKENMETER_SHOT="$PWD/docs/screenshot.png" npm start
 
 `npm run test:providers`는 Google 제공자 테스트, `npm run test:ui`는 작은·큰 창의 라이트·다크 화면과
 실제 preload IPC를 검증한다.
+
+### 릴리즈
+
+`package.json`의 `version`을 올려 커밋하고 같은 `vX.Y.Z` 태그를 push한다. GitHub Actions
+([release.yml](.github/workflows/release.yml))가 Windows와 macOS에서 빌드·테스트하고, Windows 설치 파일을 실제로 설치·실행해 본 뒤
+모든 파일을 그 태그의 릴리즈에 올린다. 릴리즈가 없으면 초안으로 만든다. 위 다운로드 링크용으로 버전 없는 사본
+(`TokenMeter-Setup.exe`, `TokenMeter-mac-arm64.dmg`, `TokenMeter-mac-x64.dmg`)도 함께 올린다.
+노트를 쓰고 초안을 게시하면 된다. 앱의 업데이트 확인은 게시된 릴리즈만 본다.
 
 ## 라이선스
 

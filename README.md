@@ -7,9 +7,9 @@
 **Your AI subscription limits, together in the Windows tray or the macOS menu bar.**
 
 <p>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Apple silicon"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Intel"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Apple silicon"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Intel"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="Latest release"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="Total GitHub release downloads"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub stars"></a>
@@ -42,19 +42,19 @@ quota without opening each service. Limits and reset times depend on what each p
 
 | Platform | File |
 |---|---|
-| Windows 10 / 11 (x64) | [TokenMeter-Setup-1.4.0.exe](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe) |
-| macOS 13+ · Apple silicon | [TokenMeter-1.4.0-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg) |
-| macOS 13+ · Intel | [TokenMeter-1.4.0-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg) |
+| Windows 10 / 11 (x64) | [TokenMeter-Setup.exe](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe) |
+| macOS 13+ · Apple silicon | [TokenMeter-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg) |
+| macOS 13+ · Intel | [TokenMeter-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg) |
 
 Not sure which Mac you have? Apple menu → **About This Mac** lists an Apple chip (Apple silicon) or an Intel processor.
-Every version and file is on the [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) page; once installed,
+These links always fetch the latest release. Every version and file is on the [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) page; once installed,
 TokenMeter tells you when a newer version is out.
 
 ## Quick Start
 
 ### Windows
 
-1. Download `TokenMeter-Setup-1.4.0.exe` from [Download](#download) on Windows 10 or 11 (x64).
+1. Download `TokenMeter-Setup.exe` from [Download](#download) on Windows 10 or 11 (x64).
 2. Run the installer. It installs per user without administrator rights and lets you choose the install folder.
 3. Click the tray icon or press `Ctrl+Alt+U`; use `+` to add an account. For Codex or Claude login, install the corresponding [`codex`](https://developers.openai.com/codex/cli) or [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI.
 
@@ -194,6 +194,14 @@ Renders one frame with fake accounts, writes the PNG and exits. Drop `TOKENMETER
 
 `npm run test:providers` runs the Google provider tests. `npm run test:ui` checks real renderer/preload
 integration at short and tall desktop heights in both themes.
+
+### Releasing
+
+Set `version` in `package.json`, commit, and push a matching `vX.Y.Z` tag. GitHub Actions
+([release.yml](.github/workflows/release.yml)) builds and tests on Windows and macOS, installs and launches the Windows
+installer, and attaches every file to that tag's release, creating a draft if needed. It also adds version-free
+copies (`TokenMeter-Setup.exe`, `TokenMeter-mac-arm64.dmg`, `TokenMeter-mac-x64.dmg`) for the download links above.
+Write the notes and publish the draft; the in-app updaters only see published releases.
 
 ## License
 

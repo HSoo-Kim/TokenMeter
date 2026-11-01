@@ -7,9 +7,9 @@
 **在 Windows 托盘或 macOS 菜单栏中，一览你的 AI 订阅额度。**
 
 <p>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="下载 Windows x64 版 TokenMeter"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="下载 Apple 芯片 Mac 版 TokenMeter"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="下载 Intel Mac 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="下载 Windows x64 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="下载 Apple 芯片 Mac 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="下载 Intel Mac 版 TokenMeter"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="最新发布版本"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="GitHub Release 累计下载量"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub Stars"></a>
@@ -42,18 +42,18 @@ TokenMeter 是 Windows 托盘及 macOS 菜单栏应用，可在一处查看 Code
 
 | 平台 | 文件 |
 |---|---|
-| Windows 10 / 11（x64） | [TokenMeter-Setup-1.4.0.exe](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe) |
-| macOS 13 及以上 · Apple 芯片 | [TokenMeter-1.4.0-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg) |
-| macOS 13 及以上 · Intel | [TokenMeter-1.4.0-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg) |
+| Windows 10 / 11（x64） | [TokenMeter-Setup.exe](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-Setup.exe) |
+| macOS 13 及以上 · Apple 芯片 | [TokenMeter-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-arm64.dmg) |
+| macOS 13 及以上 · Intel | [TokenMeter-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/latest/download/TokenMeter-mac-x64.dmg) |
 
 不确定是哪种 Mac？在苹果菜单 →**关于本机**中，显示 Apple 芯片即为 Apple 芯片，显示 Intel 处理器即为 Intel。
-所有版本和文件都在 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 页面；安装后有新版本时应用会提示。
+以上链接始终下载最新版本。所有版本和文件都在 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 页面；安装后有新版本时应用会提示。
 
 ## 快速开始
 
 ### Windows
 
-1. 在 Windows 10 或 11（x64）上，从[下载](#下载)获取 `TokenMeter-Setup-1.4.0.exe`。
+1. 在 Windows 10 或 11（x64）上，从[下载](#下载)获取 `TokenMeter-Setup.exe`。
 2. 运行安装包。应用安装在当前用户下，无需管理员权限，并可选择安装目录。
 3. 点击托盘图标或按 `Ctrl+Alt+U` 打开面板，通过 `+` 添加账号。登录 Codex 或 Claude 需安装对应的 [`codex`](https://developers.openai.com/codex/cli) 或 [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI。
 
@@ -183,6 +183,14 @@ TOKENMETER_DEMO=1 TOKENMETER_SHOT="$PWD/docs/screenshot.png" npm start
 用示例账号渲染一帧、保存 PNG 后退出。去掉 `TOKENMETER_DEMO` 则截取真实数据。
 
 `npm run test:providers` 测试 Google 提供者，`npm run test:ui` 验证两种窗口高度、深浅主题及真实 preload IPC。
+
+### 发布
+
+修改 `package.json` 的 `version` 并提交，然后推送对应的 `vX.Y.Z` 标签。GitHub Actions
+（[release.yml](.github/workflows/release.yml)）会在 Windows 和 macOS 上构建、测试，实际安装并启动 Windows 安装包，
+再把所有文件上传到该标签的发布；发布不存在时会创建草稿。同时上传供上方下载链接使用的无版本号副本
+（`TokenMeter-Setup.exe`、`TokenMeter-mac-arm64.dmg`、`TokenMeter-mac-x64.dmg`）。
+撰写说明后发布草稿即可；应用内更新只检查已发布的版本。
 
 ## 许可证
 
