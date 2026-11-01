@@ -1,0 +1,108 @@
+# Builds Windows and macOS packages on their own runners, tests both, and smoke-installs the
+# Windows installer. A pushed vX.Y.Z tag also puts every file on that tag's release (a draft if
+# the release does not exist yet), plus version-free copies that README links use through
+# releases/latest/download/.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Also smoke-install the Windows installer already published on this tag (e.g. v1.4.0)
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:providers
+      - run: npm run test:updates
+      - run: npm run test:ui
+      - run: npm run test:updates-ui
+      - run: npx electron-builder --win --publish never
+      - name: Download the published installer
+        if: inputs.release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "${{ inputs.release }}" --pattern "TokenMeter-Setup-*.exe" --dir published
+      - name: Install silently and launch
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem dist/TokenMeter-Setup-*.exe) + @(Get-ChildItem published/*.exe -ErrorAction SilentlyContinue)
+          foreach ($installer in $installers) {
+            $dir = Join-Path $env:RUNNER_TEMP ("TokenMeter-" + [guid]::NewGuid())
+            Start-Process $installer.FullName -ArgumentList '/S', "/D=$dir" -Wait
+            $app = Join-Path $dir 'TokenMeter.exe'
+            if (-not (Test-Path $app)) { throw "$($installer.Name) did not install $app" }
+            $process = Start-Process $app -PassThru
+            Start-Sleep -Seconds 15
+            if ($process.HasExited) { throw "$($installer.Name): TokenMeter exited with $($process.ExitCode)" }
+            Get-Process -Name TokenMeter | Stop-Process -Force
+            Write-Host "$($installer.FullName): installed to $dir and kept running for 15 s"
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/TokenMeter-Setup-*.exe
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:providers
+      - run: npm run test:updates
+      - run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/TokenMeter-*-mac-*.dmg
+            dist/TokenMeter-*-mac-*.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [windows, macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag must match package.json
+        run: test "$TAG" = "v$(node -p 'require("./package.json").version')"
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - name: Add version-free copies for README download links
+        working-directory: files
+        run: |
+          cp TokenMeter-Setup-*.exe TokenMeter-Setup.exe
+          cp TokenMeter-*-mac-arm64.dmg TokenMeter-mac-arm64.dmg
+          cp TokenMeter-*-mac-x64.dmg TokenMeter-mac-x64.dmg
+          ls -l
+      - name: Upload to the release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" files/* --clobber
+          else
+            gh release create "$TAG" files/* --draft --title "TokenMeter ${TAG#v}" --generate-notes
+          fi
