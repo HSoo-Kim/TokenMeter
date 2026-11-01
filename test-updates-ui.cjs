@@ -1,4 +1,4 @@
-const { app, Menu, Tray, net, shell } = require('electron');
+const { app, Menu, Notification, Tray, net, shell } = require('electron');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -22,11 +22,12 @@ let menu, requestCount = 0, mode = 'valid', installCalls = 0;
 let initialResponse;
 const initial = new Promise(resolve => { initialResponse = resolve; });
 const body = Buffer.from('verified installer UI fixture');
+const asset = process.platform === 'darwin' ? `TokenMeter-99.0.0-mac-${process.arch}.zip` : 'TokenMeter-Setup-99.0.0.exe';
 const release = {
   tag_name: 'v99.0.0', html_url: 'https://github.com/HSoo-Kim/TokenMeter/releases/tag/v99.0.0',
   assets: [{
-    name: 'TokenMeter-Setup-99.0.0.exe',
-    browser_download_url: 'https://github.com/HSoo-Kim/TokenMeter/releases/download/v99.0.0/TokenMeter-Setup-99.0.0.exe',
+    name: asset,
+    browser_download_url: `https://github.com/HSoo-Kim/TokenMeter/releases/download/v99.0.0/${asset}`,
     digest: `sha256:${createHash('sha256').update(body).digest('hex')}`, size: body.length,
   }],
 };
@@ -39,7 +40,10 @@ Menu.buildFromTemplate = template => {
   }
   return result;
 };
-Tray.prototype.displayBalloon = options => { notices.push(options); };
+// Windows announces through the tray balloon, macOS through Notification Center.
+Tray.prototype.displayBalloon = options => { notices.push(options.content); };
+Notification.prototype.show = function () { notices.push(this.body); };
+const t = i18n('ko');
 net.fetch = async url => {
   if (url.endsWith('/releases/latest')) {
     requestCount++;
@@ -113,7 +117,7 @@ app.whenReady().then(async () => {
 
   mode = 'check-error';
   await actionAndMenu(() => item('check-updates').click(), () => item('check-updates').enabled);
-  assert.equal(notices.at(-1).iconType, 'warning');
+  assert.equal(notices.at(-1), t.updateCheckFailed);
   assert.equal(item('check-updates').enabled, true);
   mode = 'valid';
   await actionAndMenu(() => item('install-update').click(), () => item('install-update').enabled);
@@ -124,7 +128,7 @@ app.whenReady().then(async () => {
   mode = 'bad-download';
   await actionAndMenu(() => item('install-update').click(), () => item('install-update').enabled);
   assert.equal(installCalls, 0, 'tampered download never reaches the installer');
-  assert.equal(notices.at(-1).iconType, 'warning');
+  assert.equal(notices.at(-1), t.updateInstallFailed);
   assert.equal(item('install-update').enabled, true, 'failure leaves the app usable');
   mode = 'valid';
   app.on('will-quit', () => {

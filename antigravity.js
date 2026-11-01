@@ -20,6 +20,12 @@ const serverFiles = root => [
   path.join(root, 'resources', 'app', 'extensions', 'antigravity', 'bin', 'language_server_windows_x64.exe'),
 ];
 const normalizedPath = value => path.win32.normalize(value).toLowerCase();
+// macOS bundles: Antigravity.app (2.x app) or "Antigravity IDE.app", system-wide or per user.
+const macApps = (dirs = ['/Applications', path.join(os.homedir(), 'Applications')]) => dirs.flatMap(dir => {
+  try { return fs.readdirSync(dir).filter(name => /^Antigravity( IDE)?\.app$/.test(name)).map(name => path.join(dir, name)); }
+  catch { return []; }
+});
+const macServer = /^language_server(?:_macos(?:_arm|_x64)?)?$/;
 const flag = (command, name) => new RegExp(`(?:^|\\s)--${name}(?:=|\\s+)(?:"([^"]+)"|([^\\s"]+))`).exec(command || '')?.slice(1).find(Boolean);
 const validPort = value => Number.isInteger(value) && value > 0 && value <= 65535;
 const fraction = value => typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : null;
@@ -83,20 +89,68 @@ function parseProcesses(processes, netstat, roots = installRoots()) {
     if (!Number.isInteger(process.ProcessId) || process.ProcessId < 1) return [];
     const token = flag(process.CommandLine, 'csrf_token');
     if (!token || /[\r\n]/.test(token)) return [];
-    const ports = new Map();
-    for (const line of netstat.split(/\r?\n/)) {
-      const fields = line.trim().split(/\s+/);
-      if (fields[0] !== 'TCP' || fields[3] !== 'LISTENING' || Number(fields[4]) !== process.ProcessId) continue;
-      const address = /^(127\.0\.0\.1|\[::1\]):(\d+)$/.exec(fields[1]);
-      if (!address || !validPort(Number(address[2]))) continue;
-      const host = address[1] === '[::1]' ? '::1' : '127.0.0.1';
-      ports.set(`${host}:${address[2]}`, { host, port: Number(address[2]), token });
-    }
-    return [{ endpoints: [...ports.values()] }];
+    const listeners = netstat.split(/\r?\n/).map(line => line.trim().split(/\s+/))
+      .filter(fields => fields[0] === 'TCP' && fields[3] === 'LISTENING' && Number(fields[4]) === process.ProcessId)
+      .map(fields => fields[1]);
+    return [{ endpoints: loopbackEndpoints(listeners, token) }];
   });
 }
 
+// "127.0.0.1:port" / "[::1]:port" listeners -> unique endpoints; wildcard and LAN binds are ignored.
+function loopbackEndpoints(addresses, token) {
+  const ports = new Map();
+  for (const value of addresses) {
+    const address = /^(127\.0\.0\.1|\[::1\]):(\d+)$/.exec(value);
+    if (!address || !validPort(Number(address[2]))) continue;
+    const host = address[1] === '[::1]' ? '::1' : '127.0.0.1';
+    ports.set(`${host}:${address[2]}`, { host, port: Number(address[2]), token });
+  }
+  return [...ports.values()];
+}
+
+// lsof -F output ("p<pid>", "f<fd>", "n<name>" lines) -> pid -> names, in lsof order.
+function lsofNames(output) {
+  const names = new Map();
+  let current;
+  for (const line of output.split('\n')) {
+    if (line[0] === 'p') names.set(current = Number(line.slice(1)), []);
+    else if (line[0] === 'n' && current) names.get(current).push(line.slice(1));
+  }
+  return names;
+}
+
+// ps: `ps -ax -o pid=,args=`; files: lsof txt names (the executable comes first);
+// sockets: lsof TCP listeners. Only language servers inside an installed Antigravity bundle count.
+function parseMacProcesses(ps, files, sockets, apps = macApps()) {
+  const executables = lsofNames(files), listeners = lsofNames(sockets);
+  return ps.split('\n').flatMap(line => {
+    const match = /^\s*(\d+)\s+(.*)$/.exec(line);
+    const pid = Number(match?.[1]), executable = executables.get(pid)?.[0];
+    if (!executable || !macServer.test(path.posix.basename(executable)) ||
+        !apps.some(app => executable.startsWith(`${app}/Contents/`))) return [];
+    const token = flag(match[2], 'csrf_token');
+    if (!token || /[\r\n]/.test(token)) return [];
+    return [{ endpoints: loopbackEndpoints(listeners.get(pid) || [], token) }];
+  });
+}
+
+// lsof exits 1 when nothing matches; that is an empty result, not a failure.
+const lsof = args => run('/usr/sbin/lsof', args, { timeout: 4000, maxBuffer: 4 * 1024 * 1024 })
+  .then(r => r.stdout, error => { if (error.code === 1) return error.stdout || ''; throw error; });
+
 async function discover() {
+  if (process.platform === 'darwin') {
+    // Only the relevant processes are queried. Never log their CSRF-bearing command lines.
+    const { stdout: ps } = await run('/bin/ps', ['-ax', '-o', 'pid=,args='], { timeout: 4000, maxBuffer: 8 * 1024 * 1024 });
+    const candidates = ps.split('\n').filter(line => line.includes('language_server') && line.includes('--csrf_token'));
+    const pids = candidates.map(line => /^\s*(\d+)\s/.exec(line)?.[1]).filter(Boolean).join(',');
+    if (!pids) return [];
+    const [files, sockets] = await Promise.all([
+      lsof(['-nP', '-a', '-p', pids, '-d', 'txt', '-Fpn']),
+      lsof(['-nP', '-a', '-p', pids, '-iTCP', '-sTCP:LISTEN', '-Fpn']),
+    ]);
+    return parseMacProcesses(candidates.join('\n'), files, sockets);
+  }
   if (process.platform !== 'win32') return [];
   const system = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32');
   // Only the relevant process is queried. Never log its CSRF-bearing command line.
@@ -194,7 +248,8 @@ const antigravity = {
   accountHome: () => '~/.gemini/antigravity',
   credFile: home => path.join(home, 'app_storage.json'),
   async login(home, lang = 'en') {
-    const executable = installRoots().map(root => path.join(root, 'Antigravity.exe')).find(file => fs.existsSync(file));
+    const executable = process.platform === 'darwin' ? macApps()[0]
+      : installRoots().map(root => path.join(root, 'Antigravity.exe')).find(file => fs.existsSync(file));
     if (!executable) throw new Error(i18n(lang).antigravityNotInstalled);
     const error = await require('electron').shell.openPath(executable);
     if (error) throw new Error(i18n(lang).antigravityUnavailable);
@@ -203,4 +258,4 @@ const antigravity = {
 };
 
 module.exports = antigravity;
-Object.defineProperty(module.exports, '_test', { value: { parseQuota, parseProcesses, requestLocal, fetchQuota } });
+Object.defineProperty(module.exports, '_test', { value: { parseQuota, parseProcesses, parseMacProcesses, macApps, requestLocal, fetchQuota } });

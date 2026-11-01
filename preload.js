@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform,
   onState: cb => ipcRenderer.on('state', (_, s) => cb(s)),
   refresh: () => ipcRenderer.invoke('refresh'),
   menu: id => ipcRenderer.invoke('menu', id),

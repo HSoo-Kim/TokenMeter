@@ -1,7 +1,7 @@
 {
   "name": "tokenmeter",
-  "version": "1.3.0",
-  "description": "Windows tray monitor for Codex, Claude, Gemini and Antigravity quota",
+  "version": "1.4.0",
+  "description": "Windows tray and macOS menu bar monitor for Codex, Claude, Gemini and Antigravity quota",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -10,7 +10,8 @@
     "test:updates-ui": "electron test-updates-ui.cjs",
     "test:ui": "electron test-gemini-ui.cjs",
     "icon": "node build/make-icon.js",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:mac": "electron-builder --mac --publish never"
   },
   "devDependencies": {
     "electron": "^44.3.0",
@@ -29,6 +30,7 @@
       "main.js",
       "preload.js",
       "providers.js",
+      "keychain.js",
       "gemini.js",
       "gemini-web.js",
       "antigravity.js",
@@ -48,6 +50,32 @@
       ],
       "icon": "build/icon.ico",
       "artifactName": "TokenMeter-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools",
+      "artifactName": "TokenMeter-${version}-mac-${arch}.${ext}",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "LSUIElement": true
+      }
     },
     "nsis": {
       "oneClick": false,

@@ -21,7 +21,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--bg); height: 100%; }
   body {
-    font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+    font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", "Malgun Gothic", -apple-system, system-ui, sans-serif;
     color: var(--fg); -webkit-font-smoothing: antialiased; user-select: none; overflow: hidden;
   }
   .shell { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; max-height: 100dvh; }
@@ -110,21 +110,26 @@
     return d ? `${d}${T.d} ${h}${T.h}` : h ? `${h}${T.h} ${m}${T.m}` : `${m}${T.m}`;
   };
   const PROVIDER = { codex: ['GPT', 'Codex'], claude: ['CL', 'Claude'], gemini: ['GM', 'Gemini CLI'], 'gemini-web': ['GM', 'Gemini Web'], antigravity: ['AG', 'Antigravity'] };
+  // macOS shows accelerators as ⌃⌥⇧⌘ symbols; the stored accelerator text stays Electron's
+  const MAC = api.platform === 'darwin';
+  const MODS = MAC ? '⌃ / ⌥ / ⇧ / ⌘' : 'Ctrl / Alt / Shift';
+  const SYMBOL = { Ctrl: '⌃', Control: '⌃', Alt: '⌥', Option: '⌥', Shift: '⇧', Super: '⌘', Meta: '⌘', Command: '⌘', Cmd: '⌘' };
+  const keyLabel = acc => (MAC ? acc.split('+').map(k => SYMBOL[k] || k).join('') : acc);
   const LANGS = ['en', 'zh', 'ko'];
   const I18N = {
     en: { langMark: 'EN', connected: n => `${n} connected`, loading: 'Loading…', updated: t => `Updated ${t}`,
       left: 'left', resetsIn: d => `resets in ${d}`, noUsage: 'No usage data', loginRequired: 'Login required', login: 'Log in',
-      openClose: 'open / close', hotkeyHint: 'Click, then press a new combo', pressCombo: 'Press a combo…', needMod: 'Needs Ctrl / Alt / Shift',
+      openClose: 'open / close', hotkeyHint: 'Click, then press a new combo', pressCombo: 'Press a combo…', needMod: `Needs ${MODS}`,
       themeTitle: 'Theme', addTitle: 'Add account', refreshTitle: 'Refresh', closeTitle: 'Close (Esc)', menuTitle: 'Account menu',
       d: 'd', h: 'h', m: 'm', locale: 'en-US' },
     zh: { langMark: '中', connected: n => `已连接 ${n}`, loading: '加载中…', updated: t => `更新于 ${t}`,
       left: '剩余', resetsIn: d => `${d}后重置`, noUsage: '暂无用量数据', loginRequired: '需要登录', login: '登录',
-      openClose: '打开/关闭', hotkeyHint: '点击后按下新的组合键', pressCombo: '请按组合键…', needMod: '需含 Ctrl / Alt / Shift',
+      openClose: '打开/关闭', hotkeyHint: '点击后按下新的组合键', pressCombo: '请按组合键…', needMod: `需含 ${MODS}`,
       themeTitle: '主题', addTitle: '添加账号', refreshTitle: '刷新', closeTitle: '关闭 (Esc)', menuTitle: '账号菜单',
       d: '天', h: '小时', m: '分', locale: 'zh-CN' },
     ko: { langMark: '한', connected: n => `${n} 연결됨`, loading: '불러오는 중…', updated: t => `업데이트 ${t}`,
       left: '남음', resetsIn: d => `${d} 후 초기화`, noUsage: '사용량 정보 없음', loginRequired: '로그인 필요', login: '로그인',
-      openClose: '열기/닫기', hotkeyHint: '클릭 후 새 키 조합 입력', pressCombo: '키 조합 입력…', needMod: 'Ctrl / Alt / Shift 포함 필요',
+      openClose: '열기/닫기', hotkeyHint: '클릭 후 새 키 조합 입력', pressCombo: '키 조합 입력…', needMod: `${MODS} 포함 필요`,
       themeTitle: '테마', addTitle: '계정 추가', refreshTitle: '새로고침', closeTitle: '닫기 (Esc)', menuTitle: '계정 메뉴',
       d: '일', h: '시간', m: '분', locale: 'ko-KR' },
   };
@@ -179,7 +184,7 @@
   }
   api.onState(s => {
     data = s.list; hotkey = s.hotkey; applyLang(s.lang); applyTheme(s.theme || 'dark');
-    if (!recording) hk.textContent = hotkey;
+    if (!recording) hk.textContent = keyLabel(hotkey);
     $('#refresh').classList.remove('spin'); render();
   });
   setInterval(render, 30000);
@@ -255,19 +260,19 @@
     PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert', Delete: 'Delete', Backspace: 'Backspace', Tab: 'Tab', Enter: 'Enter' };
   const keyName = c => /^Key[A-Z]$/.test(c) ? c[3] : /^Digit\d$/.test(c) ? c[5] : /^F\d{1,2}$/.test(c) ? c : KEYS[c];
   let recording = false;
-  const stopRec = (text, err) => { recording = false; hk.className = err ? 'err' : ''; hk.textContent = text; if (err) setTimeout(() => { hk.className = ''; hk.textContent = hotkey; }, 2000); };
+  const stopRec = (text, err) => { recording = false; hk.className = err ? 'err' : ''; hk.textContent = text; if (err) setTimeout(() => { hk.className = ''; hk.textContent = keyLabel(hotkey); }, 2000); };
   hk.onclick = () => { if (recording) return; recording = true; hk.className = 'rec'; hk.textContent = T.pressCombo; };
   addEventListener('keydown', async e => {
     if (!recording) { if (e.key === 'Escape') api.hide(); return; }
     e.preventDefault();
-    if (e.key === 'Escape') return stopRec(hotkey);
+    if (e.key === 'Escape') return stopRec(keyLabel(hotkey));
     const key = keyName(e.code);
     if (!key) return; // modifier-only or unsupported key: keep waiting
-    const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
+    const mods = [e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && (MAC ? 'Command' : 'Super')].filter(Boolean);
     if (!mods.length) { hk.textContent = T.needMod; return; }
     const acc = [...mods, key].join('+');
     const r = await api.setHotkey(acc);
-    r.ok ? stopRec(acc) : stopRec(r.error, true);
+    r.ok ? stopRec(keyLabel(acc)) : stopRec(r.error, true);
   });
 </script>
 </body>

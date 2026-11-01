@@ -17,14 +17,18 @@ function version(value) {
   return parts.every(Number.isSafeInteger) ? parts : null;
 }
 
-function parseRelease(data) {
+// The installer for this platform: the NSIS setup on Windows, the zipped app bundle per CPU on macOS.
+const installerName = (number, target) => (target.platform === 'darwin'
+  ? `TokenMeter-${number}-mac-${target.arch}.zip` : `TokenMeter-Setup-${number}.exe`);
+
+function parseRelease(data, target = process) {
   if (data?.draft || data?.prerelease) return null;
   const parts = version(data?.tag_name);
   if (!parts || data.html_url !== `${repository}/releases/tag/${data.tag_name}`) {
     throw new Error('Invalid TokenMeter release');
   }
   const number = parts.join('.');
-  const name = `TokenMeter-Setup-${number}.exe`;
+  const name = installerName(number, target);
   const asset = Array.isArray(data.assets) ? data.assets.find(a => a.name === name) : undefined;
   const digest = /^sha256:([a-f0-9]{64})$/i.exec(asset?.digest);
   const url = `${repository}/releases/download/${data.tag_name}/${name}`;
@@ -34,7 +38,7 @@ function parseRelease(data) {
   return { tag: data.tag_name, version: number, url: data.html_url, installer };
 }
 
-async function check(current, request = fetch) {
+async function check(current, request = fetch, target = process) {
   const installed = version(current);
   if (!installed) throw new Error('Invalid installed version');
   const response = await request(latestApi, {
@@ -43,7 +47,7 @@ async function check(current, request = fetch) {
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Update check HTTP ${response.status}`);
-  const release = parseRelease(await response.json());
+  const release = parseRelease(await response.json(), target);
   if (!release) return null;
   const available = version(release.version);
   const different = available.findIndex((part, index) => part !== installed[index]);
@@ -78,12 +82,43 @@ async function download(release, directory, request = fetch) {
   }
 }
 
-async function install(file, executable, start = spawn) {
+async function install(file, executable, start = spawn, platform = process.platform) {
+  if (platform === 'darwin') return installMac(file, executable, start);
   // /D must be the final argument. NSIS preserves the current install folder.
-  const child = start(file, ['/S', '--updated', '--force-run', `/D=${path.dirname(executable)}`], {
+  const child = start(file, ['/S', '--updated', '--force-run', `/D=${path.win32.dirname(executable)}`], {
     detached: true, stdio: 'ignore', windowsHide: true,
   });
   // Quit only after Windows has accepted the installer, not after a failed spawn.
+  await once(child, 'spawn');
+  child.unref();
+}
+
+// Runs detached: wait for TokenMeter ($1) to exit, swap bundle $2 for $3 (restoring $2 if that
+// fails), drop the staging folder $4 and start whichever bundle is in place.
+const SWAP_SCRIPT = `while kill -0 "$1" 2>/dev/null; do sleep 0.2; done
+old="$2.previous"
+rm -rf "$old"
+if mv "$2" "$old"; then
+  if mv "$3" "$2"; then rm -rf "$old"; else mv "$old" "$2"; fi
+fi
+rm -rf "$4"
+open "$2"`;
+
+async function installMac(file, executable, start) {
+  const bundle = path.resolve(executable, '..', '..', '..');
+  if (path.extname(bundle) !== '.app') throw new Error('TokenMeter is not running from an app bundle');
+  // A translocated or root-owned bundle cannot be replaced; fail before quitting.
+  await fs.promises.access(path.dirname(bundle), fs.constants.W_OK);
+  // Unpack beside the verified zip; ditto keeps the bundle's symlinks and code signature intact.
+  const staging = path.dirname(file);
+  const unzip = start('/usr/bin/ditto', ['-x', '-k', file, staging], { stdio: 'ignore' });
+  const [code] = await once(unzip, 'close');
+  if (code !== 0) throw new Error(`Unpacking the update failed (${code})`);
+  const next = path.join(staging, 'TokenMeter.app');
+  if (!fs.existsSync(path.join(next, 'Contents', 'MacOS'))) throw new Error('Update contains no TokenMeter.app');
+  const child = start('/bin/sh', ['-c', SWAP_SCRIPT, 'tokenmeter-update', String(process.pid), bundle, next, staging], {
+    detached: true, stdio: 'ignore',
+  });
   await once(child, 'spawn');
   child.unref();
 }

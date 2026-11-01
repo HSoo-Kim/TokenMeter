@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const http = require('node:http');
 const { once } = require('node:events');
 const provider = require('./antigravity');
-const { parseQuota, parseProcesses, requestLocal, fetchQuota } = provider._test;
+const { parseQuota, parseProcesses, parseMacProcesses, requestLocal, fetchQuota } = provider._test;
 
 const root = 'C:\\Users\\fixture\\AppData\\Local\\Programs\\Antigravity';
 const processInfo = {
@@ -103,6 +103,28 @@ test('process discovery accepts only expected executable and its loopback listen
   assert.deepEqual(parseProcesses({ ...processInfo, ExecutablePath: 'C:\\impostor\\language_server.exe' }, sockets, [root]), []);
   assert.deepEqual(parseProcesses({ ...processInfo, CommandLine: '--csrf_token="bad\r\ntoken"' }, sockets, [root]), []);
   assert.deepEqual(parseProcesses({ ...processInfo, CommandLine: '--extension_server_csrf_token=wrong' }, sockets, [root]), []);
+});
+
+test('macOS discovery accepts only language servers inside an Antigravity bundle and their loopback listeners', () => {
+  const app = '/Applications/Antigravity IDE.app';
+  const server = `${app}/Contents/Resources/app/extensions/antigravity/bin/language_server_macos_arm`;
+  const ps = [
+    `  321 ${server} --csrf_token fixture-token --extension_server_port 4999`,
+    `  322 /tmp/language_server_macos_arm --csrf_token stolen`,
+    `  323 ${server} --extension_server_csrf_token wrong`,
+  ].join('\n');
+  const files = ['p321', 'ftxt', `n${server}`, 'ftxt', 'n/usr/lib/dyld',
+    'p322', 'ftxt', 'n/tmp/language_server_macos_arm', 'p323', 'ftxt', `n${server}`].join('\n');
+  const sockets = ['p321', 'f8', 'n127.0.0.1:4567', 'f9', 'n[::1]:4568', 'f10', 'n*:4570', 'f11', 'n192.168.0.1:4569',
+    'p322', 'f8', 'n127.0.0.1:5555'].join('\n');
+  assert.deepEqual(parseMacProcesses(ps, files, sockets, [app]), [{ endpoints: [
+    { host: '127.0.0.1', port: 4567, token: 'fixture-token' },
+    { host: '::1', port: 4568, token: 'fixture-token' },
+  ] }]);
+  // A command line naming the bundle is not enough; the running executable must live in it.
+  const spoofed = files.replace(`p321\nftxt\nn${server}`, 'p321\nftxt\nn/tmp/language_server_macos_arm');
+  assert.deepEqual(parseMacProcesses(ps, spoofed, sockets, [app]), []);
+  assert.deepEqual(parseMacProcesses(ps, files.replaceAll(app, '/Applications/Other.app'), sockets, [app]), []);
 });
 
 test('actual HTTP boundary sends only expected Connect request and CSRF header', async t => {

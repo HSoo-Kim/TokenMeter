@@ -5,6 +5,14 @@ const path = require('node:path');
 const i18n = require('./i18n');
 
 const ENDPOINT = 'https://cloudcode-pa.googleapis.com/v1internal:';
+// Package folder of a `gemini` launcher that resolves into @google/gemini-cli, or undefined.
+function packageOf(launcher) {
+  let target;
+  try { target = fs.realpathSync(launcher); } catch { return undefined; }
+  const marker = `${path.sep}@google${path.sep}gemini-cli${path.sep}`;
+  const at = target.lastIndexOf(marker);
+  return at === -1 ? undefined : target.slice(0, at + marker.length - 1);
+}
 
 const gemini = {
   credFile: home => path.join(home, 'oauth_creds.json'),
@@ -25,10 +33,19 @@ const gemini = {
     const refresh = async () => {
       if (!auth.refresh_token) throw new Error(t.geminiCliSetup);
       // Use the installed official CLI's own client, never a bundled OAuth client.
+      const userHome = require('node:os').homedir();
+      // A Finder-launched app gets a minimal PATH, so also try the usual macOS bin folders.
+      const bins = [...(process.env.PATH || '').split(path.delimiter).filter(Boolean),
+        ...(process.platform === 'darwin' ? ['/opt/homebrew/bin', '/usr/local/bin',
+          ...['.npm-global/bin', '.local/bin', '.volta/bin', '.bun/bin'].map(dir => path.join(userHome, dir))] : [])];
       const roots = [
         settings.tokenmeter?.cliPath,
-        ...(process.env.PATH || '').split(path.delimiter).map(dir => path.join(dir, 'node_modules', '@google', 'gemini-cli')),
-        path.join(require('node:os').homedir(), '.bun', 'install', 'global', 'node_modules', '@google', 'gemini-cli'),
+        ...bins.flatMap(dir => [
+          path.join(dir, 'node_modules', '@google', 'gemini-cli'),                 // Windows npm prefix
+          path.join(dir, '..', 'lib', 'node_modules', '@google', 'gemini-cli'),    // Unix npm prefix
+          packageOf(path.join(dir, 'gemini')),                                     // symlinked launcher (Homebrew)
+        ]),
+        path.join(userHome, '.bun', 'install', 'global', 'node_modules', '@google', 'gemini-cli'),
       ].filter(Boolean);
       let client;
       for (const root of new Set(roots)) {

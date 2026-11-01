@@ -1,4 +1,5 @@
-// Generates build/icon.ico (the installer + exe icon) from the same ring gauge the tray draws.
+// Generates build/icon.ico (the installer + exe icon) and build/icon.icns (the macOS app icon)
+// from the same ring gauge the tray draws.
 // Run with: node build/make-icon.js
 const fs = require('node:fs');
 const path = require('node:path');
@@ -18,9 +19,12 @@ const png = (w, h, rgba) => {
 };
 
 // Filled dark rounded square, then a 72%-complete gauge ring in the tray green.
-function frame(S) {
+// `pad` is the margin around the square; the macOS grid uses about 10% (824 of 1024 px).
+function frame(S, pad = 0.055) {
   const buf = Buffer.alloc(S * S * 4);
-  const c = (S - 1) / 2, R = S * 0.43, r = S * 0.27, pad = S * 0.055, radius = S * 0.22;
+  const k = (1 - 2 * pad) / 0.89; // artwork scale relative to the Windows icon
+  const c = (S - 1) / 2, R = S * 0.43 * k, r = S * 0.27 * k, radius = S * 0.22 * k;
+  pad *= S;
   const bg = [26, 28, 36], ring = [52, 211, 153], track = [64, 68, 84];
   const frac = 0.72;
   const px = (x, y, [cr, cg, cb], a) => {
@@ -49,7 +53,7 @@ function frame(S) {
 
 // ICO container; Vista+ reads PNG-compressed entries directly
 const sizes = [16, 24, 32, 48, 64, 128, 256];
-const images = sizes.map(frame);
+const images = sizes.map(s => frame(s));
 const header = Buffer.alloc(6); header.writeUInt16LE(0, 0); header.writeUInt16LE(1, 2); header.writeUInt16LE(sizes.length, 4);
 let offset = 6 + 16 * sizes.length;
 const entries = sizes.map((s, i) => {
@@ -65,3 +69,17 @@ const out = path.join(__dirname, 'icon.ico');
 fs.writeFileSync(out, Buffer.concat([header, ...entries, ...images]));
 fs.writeFileSync(path.join(__dirname, 'icon.png'), images[sizes.indexOf(256)]);
 console.log('wrote', out, fs.statSync(out).size, 'bytes');
+
+// ICNS container of PNG entries: [type, pixel size]; @2x types reuse the larger renders.
+const macTypes = [['icp4', 16], ['icp5', 32], ['ic11', 32], ['ic12', 64], ['ic07', 128],
+  ['ic08', 256], ['ic13', 256], ['ic09', 512], ['ic14', 512], ['ic10', 1024]];
+const macImages = new Map([16, 32, 64, 128, 256, 512, 1024].map(s => [s, frame(s, 100 / 1024)]));
+const icns = macTypes.map(([type, s]) => {
+  const head = Buffer.alloc(8); head.write(type, 0, 'ascii'); head.writeUInt32BE(8 + macImages.get(s).length, 4);
+  return Buffer.concat([head, macImages.get(s)]);
+});
+const icnsHead = Buffer.alloc(8); icnsHead.write('icns', 0, 'ascii');
+icnsHead.writeUInt32BE(8 + icns.reduce((n, e) => n + e.length, 0), 4);
+const macOut = path.join(__dirname, 'icon.icns');
+fs.writeFileSync(macOut, Buffer.concat([icnsHead, ...icns]));
+console.log('wrote', macOut, fs.statSync(macOut).size, 'bytes');

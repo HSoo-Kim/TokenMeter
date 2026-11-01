@@ -4,10 +4,11 @@
 
 # TokenMeter
 
-**Your AI subscription limits, together in the Windows tray.**
+**Your AI subscription limits, together in the Windows tray or the macOS menu bar.**
 
 <p>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-macOS-000000?style=for-the-badge" alt="Download TokenMeter for macOS"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="Latest release"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="Total GitHub release downloads"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub stars"></a>
@@ -22,7 +23,7 @@
 
 </div>
 
-TokenMeter is a Windows tray app for checking remaining Codex, Claude, Gemini web and Antigravity
+TokenMeter is a Windows tray and macOS menu bar app for checking remaining Codex, Claude, Gemini web and Antigravity
 quota without opening each service. Limits and reset times depend on what each provider returns.
 
 ## At a glance
@@ -32,9 +33,9 @@ quota without opening each service. Limits and reset times depend on what each p
 | **One panel, separate quotas** | Shows Codex, Claude, Gemini web and Antigravity accounts together without combining their usage pools. A legacy Gemini CLI option is available for licensed Code Assist accounts. |
 | **Limits and resets** | Displays available 5-hour, weekly and model-specific limits with remaining percentages and reset times when reported. |
 | **Multiple accounts** | Add several accounts for the same service and drag their cards into order. |
-| **Always at hand** | Open from the tray or with `Ctrl+Alt+U`. The ring gauge reflects the most-used limit; quota refreshes every 60 seconds by default. |
-| **Make it yours** | Switch between dark and light themes, choose English, Korean or Chinese, change the shortcut and configure Windows startup. |
-| **Updates on your terms** | Get a new-version notification and start a verified installer from the tray menu. |
+| **Always at hand** | Open from the tray or menu bar icon, or with `Ctrl+Alt+U` (`⌃⌥U` on macOS). The ring gauge reflects the most-used limit; quota refreshes every 60 seconds by default. |
+| **Make it yours** | Switch between dark and light themes, choose English, Korean or Chinese, change the shortcut and start with Windows or at macOS login. |
+| **Updates on your terms** | Get a new-version notification and start a verified installer from the tray or menu bar icon. |
 
 ## Quick Start
 
@@ -44,6 +45,17 @@ quota without opening each service. Limits and reset times depend on what each p
 
 The installer is unsigned, so Windows SmartScreen may show “Windows protected your PC”: choose
 **More info → Run anyway**. Uninstall from Windows Settings → Apps; settings in `%APPDATA%\TokenMeter` are kept.
+
+### macOS
+
+1. On macOS 13 or later, download `TokenMeter-<version>-mac-arm64.dmg` (Apple silicon) or `TokenMeter-<version>-mac-x64.dmg` (Intel) from the [latest release](https://github.com/HSoo-Kim/TokenMeter/releases/latest).
+2. Open the disk image and drag TokenMeter into Applications.
+3. Click the ring in the menu bar or press `⌃⌥U` (Control+Option+U); right-click the ring for the menu. TokenMeter has no Dock icon.
+4. Use `+` to add an account. Codex and Claude login need the same `codex` or `claude` CLI as on Windows; it runs in Terminal.
+
+The app is ad-hoc signed but not notarized, so the first launch is blocked: open System Settings → Privacy & Security
+and choose **Open Anyway**. On a notched display a crowded menu bar can hide the ring; the shortcut still opens the panel.
+Uninstall by moving the app to the Trash; settings in `~/Library/Application Support/TokenMeter` are kept.
 
 ### Updates
 
@@ -57,6 +69,11 @@ Source runs or releases without a verifiable installer open the release page ins
 
 Versions 1.2.1 and older have no updater. Install 1.3.0 manually once to receive future notifications.
 
+On macOS (1.4.0 and later) the notification comes from Notification Center and the update items are in the menu bar
+icon's right-click menu. The update downloads `TokenMeter-<version>-mac-<arch>.zip` for the Mac's CPU, verifies it
+the same way, replaces the app where it is installed and reopens it. The folder holding the app must be writable
+for your user; otherwise the update fails and the running version stays.
+
 ### From source
 
 ```
@@ -65,10 +82,11 @@ cd TokenMeter
 npm install
 npm start        # run it
 npm run dist     # build dist/TokenMeter-Setup-<version>.exe
+npm run dist:mac # on macOS: build dist/TokenMeter-<version>-mac-<arch>.dmg and .zip
 ```
 
 [Node.js](https://nodejs.org) 20+ is required for this path. `TokenMeter.cmd` starts the app the same way
-`npm start` does.
+`npm start` does on Windows.
 
 ## How it reads your quota
 
@@ -79,12 +97,17 @@ Antigravity is read through its running local language server; its login credent
 | Provider | Credential file | Usage endpoint |
 |---|---|---|
 | Codex | `<home>/auth.json` | `chatgpt.com/backend-api/wham/usage` |
-| Claude | `<home>/.credentials.json` | `api.anthropic.com/api/oauth/usage` |
+| Claude | `<home>/.credentials.json` (macOS: login keychain) | `api.anthropic.com/api/oauth/usage` |
 | Gemini web | Isolated browser session in `<home>` | Gemini web usage GraphQL |
 | Antigravity | Running, signed-in local app | Authenticated loopback quota RPC |
 | Gemini CLI (legacy licensed Code Assist) | `<home>/oauth_creds.json` | `cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` |
 
 Claude reports per-model weekly limits too, so a `Weekly Opus` row appears whenever the API returns one.
+
+On macOS, Claude Code keeps its login in the login keychain instead of `.credentials.json`: the item is
+`Claude Code-credentials` for `~/.claude` and `Claude Code-credentials-<8 hex>` for any other folder, the same name
+the CLI derives from `CLAUDE_CONFIG_DIR`. TokenMeter reads and refreshes that item through `/usr/bin/security`
+and falls back to the file when there is no item.
 
 ### Google accounts
 
@@ -93,6 +116,7 @@ subscription balance. Gemini web shows the reported 5-hour and weekly limits; si
 the window that opens, then close it to refresh the card. Each account has its own session. Logging out
 clears only that TokenMeter session, not Chrome. Antigravity must stay running and signed in. Its shared
 local account cannot be logged out from TokenMeter. Unknown percentages or reset times are not invented.
+On macOS TokenMeter looks for `Antigravity.app` or `Antigravity IDE.app` in `/Applications` or `~/Applications`.
 
 Consumer Google login for Gemini CLI ended June 18, 2026. The CLI option is for existing licensed Code
 Assist accounts, not Google AI Pro/Ultra web subscription quota. It requires the official `gemini` CLI;
@@ -105,8 +129,8 @@ See Google's [individual-account deprecation notice](https://developers.google.c
 
 ## Accounts
 
-Settings live in `%APPDATA%\TokenMeter\config.json`. One entry there is one account, and `home` is
-that account's CLI credential folder:
+Settings live in `%APPDATA%\TokenMeter\config.json` (macOS: `~/Library/Application Support/TokenMeter/config.json`).
+One entry there is one account, and `home` is that account's CLI credential folder:
 
 ```json
 {
@@ -125,23 +149,30 @@ that account's CLI credential folder:
 - Drag a card up or down to reorder the list; the order is saved. The `⋯` menu also has Move up / Move down
 - `⋯` on a card: log in (opens the provider's web OAuth flow), log out, open the credential folder, remove
 - `+` in the header: add an account, which creates a new folder such as `~/.codex-2` and logs in there
-- Logging in runs `codex login` / `claude auth login` with `CODEX_HOME` / `CLAUDE_CONFIG_DIR` pointed at that folder,
-  so each account stays isolated and your existing CLI sessions are untouched
-- Logging out deletes that credential file, which also signs out any CLI using the same folder
+- Logging in runs `codex login` / `claude auth login` in a console window (Terminal on macOS) with `CODEX_HOME` /
+  `CLAUDE_CONFIG_DIR` pointed at that folder, so each account stays isolated and your existing CLI sessions are untouched.
+  On macOS the `~/.claude` account runs without `CLAUDE_CONFIG_DIR`, so it shares the keychain item of a plain `claude`
+- Logging out deletes that credential file (on macOS, also Claude's keychain item), which also signs out any CLI using the same folder
 
 ## Settings
 
 Theme, language and hotkey are changed in the app and saved to `config.json`. The hotkey chip in the footer
-records a new combination: click it, press the keys (one of Ctrl / Alt / Shift is required), `Esc` cancels.
-If another app already owns the combination, the old one is kept.
+records a new combination: click it, press the keys (one of Ctrl / Alt / Shift is required; on macOS ⌃ / ⌥ / ⇧ / ⌘),
+`Esc` cancels. If another app already owns the combination, the old one is kept.
 
-The tray menu has **Open config.json** if you want to edit it by hand; do that with the app closed
-(tray menu → Quit), then start it again.
+The tray menu (on macOS, the menu bar icon's right-click menu) has **Open config.json** if you want to edit it by hand;
+do that with the app closed (same menu → Quit), then start it again.
 
 ## Development
 
 ```
 set TOKENMETER_DEMO=1 && set TOKENMETER_SHOT=%CD%\docs\screenshot.png && npm start
+```
+
+On macOS:
+
+```
+TOKENMETER_DEMO=1 TOKENMETER_SHOT="$PWD/docs/screenshot.png" npm start
 ```
 
 Renders one frame with fake accounts, writes the PNG and exits. Drop `TOKENMETER_DEMO` to capture real data.

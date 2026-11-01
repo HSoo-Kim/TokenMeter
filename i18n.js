@@ -126,4 +126,32 @@ const STRINGS = {
   },
 };
 
+// macOS wording: menu bar instead of tray, login items instead of Windows startup, keychain logins.
+const MAC_STRINGS = {
+  en: {
+    trayAutostart: 'Open at login',
+    updateAvailable: tag => `TokenMeter ${tag} is available. Right-click the menu bar icon and choose Update.`,
+    updateCheckFailed: 'Could not check for updates. Try again from the menu bar icon.',
+    updateInstallFailed: 'Update failed. TokenMeter is still running. Try again from the menu bar icon.',
+    logoutKeychainDetail: service => `Keychain item "${service}"\n\nThis login will be deleted from the macOS keychain. Any CLI sharing this folder is logged out too.`,
+  },
+  zh: {
+    trayAutostart: '登录时打开',
+    updateAvailable: tag => `TokenMeter ${tag} 已发布。右键点击菜单栏图标并选择更新。`,
+    updateCheckFailed: '无法检查更新。请在菜单栏图标中重试。',
+    updateInstallFailed: '更新失败。TokenMeter 仍在运行，请在菜单栏图标中重试。',
+    logoutKeychainDetail: service => `钥匙串项目 "${service}"\n\n将从 macOS 钥匙串删除此登录。共用该文件夹的 CLI 也会一并退出登录。`,
+  },
+  ko: {
+    trayAutostart: '로그인 시 실행',
+    updateAvailable: tag => `TokenMeter ${tag}가 나왔습니다. 메뉴 막대 아이콘을 우클릭하고 업데이트를 선택하세요.`,
+    updateCheckFailed: '새 버전을 확인하지 못했습니다. 메뉴 막대 아이콘에서 다시 시도하세요.',
+    updateInstallFailed: '업데이트에 실패했습니다. 앱은 계속 실행 중이며 메뉴 막대 아이콘에서 다시 시도할 수 있습니다.',
+    logoutKeychainDetail: service => `키체인 항목 "${service}"\n\nmacOS 키체인에서 이 로그인 정보를 삭제합니다. 같은 폴더를 쓰는 CLI도 함께 로그아웃됩니다.`,
+    // Terminal is UTF-8, unlike the Windows console this text was kept English for
+    loginTitle: id => `TokenMeter 로그인 (${id})`, loginDone: '[TokenMeter] 완료 - 이 창을 닫으세요.',
+  },
+};
+if (process.platform === 'darwin') for (const lang in MAC_STRINGS) Object.assign(STRINGS[lang], MAC_STRINGS[lang]);
+
 module.exports = lang => STRINGS[lang] || STRINGS.en;

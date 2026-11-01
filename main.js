@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, globalShortcut, ipcMain, screen, shell, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, nativeTheme, globalShortcut, ipcMain, screen, shell, dialog } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const zlib = require('node:zlib');
@@ -7,6 +7,7 @@ const providers = require('./providers');
 const i18n = require('./i18n');
 const updates = require('./updates');
 const { net } = require('electron');
+const MAC = process.platform === 'darwin';
 
 app.setName('TokenMeter');
 // This small panel needs no GPU; use software rendering across display changes.
@@ -37,7 +38,7 @@ if (firstRun) saveCfg();
 const state = {};     // id -> last known result
 const notBefore = {}; // id -> ms; rate-limit backoff
 let availableUpdate = null, checkingUpdate = false, installingUpdate = false, notifiedUpdate = null;
-let win, tray, polling = false, suppressHide = false;
+let win, tray, trayContext, polling = false, suppressHide = false;
 
 // TOKENMETER_DEMO fills the window with fake accounts, for docs screenshots
 const DEMO = process.env.TOKENMETER_DEMO && [
@@ -74,11 +75,11 @@ const LANGS = ['en', 'zh', 'ko'];
 const LANG_NAMES = [['ko', '한국어'], ['en', 'English'], ['zh', '中文']]; // dropdown order
 function trayMenu() {
   const t = i18n(cfg.lang);
-  tray.setContextMenu(Menu.buildFromTemplate([
+  trayContext = Menu.buildFromTemplate([
     { label: t.trayOpenClose, click: toggle },
     { label: t.trayRefresh, click: () => poll(true) },
     { type: 'separator' },
-    { label: t.trayAutostart, type: 'checkbox', checked: isAutostart(), click: m => autostart(m.checked) },
+    { label: t.trayAutostart, type: 'checkbox', checked: isAutostart(), enabled: canAutostart, click: m => autostart(m.checked) },
     { label: t.trayOpenConfig, click: () => shell.openPath(CFG_FILE) },
     { type: 'separator' },
     { id: 'check-updates', label: t.trayCheckUpdates, enabled: !checkingUpdate && !installingUpdate, click: () => checkForUpdate(true) },
@@ -90,7 +91,9 @@ function trayMenu() {
       visible: !!availableUpdate, enabled: !installingUpdate, click: installUpdate },
     { type: 'separator' },
     { label: t.trayQuit, click: () => app.quit() },
-  ]));
+  ]);
+  // macOS: a menu attached with setContextMenu would also take the left click; see the right-click handler.
+  if (!MAC) tray.setContextMenu(trayContext);
 }
 
 function push() {
@@ -106,7 +109,8 @@ function push() {
 
 // ---- updates ---------------------------------------------------------------
 function updateNotice(content, iconType = 'info') {
-  tray.displayBalloon({ title: 'TokenMeter', content, iconType, respectQuietTime: true });
+  if (!MAC) return tray.displayBalloon({ title: 'TokenMeter', content, iconType, respectQuietTime: true });
+  if (Notification.isSupported()) new Notification({ title: 'TokenMeter', body: content }).show();
 }
 async function checkForUpdate(manual = false) {
   if (checkingUpdate || installingUpdate || (!manual && !cfg.checkForUpdates)) return;
@@ -168,6 +172,8 @@ function png(w, h, rgba) {
 function icon(usedPct) {
   const S = 32, c = (S - 1) / 2, R = 14.5, r = 8.5, buf = Buffer.alloc(S * S * 4);
   const col = usedPct == null ? [150, 154, 170] : usedPct < 50 ? [52, 211, 153] : usedPct < 80 ? [251, 191, 36] : [248, 113, 113];
+  // the unused track follows the macOS menu bar appearance; the Windows tray is always dark enough for white
+  const track = MAC && !nativeTheme.shouldUseDarkColors ? [0, 0, 0] : [255, 255, 255];
   const frac = (usedPct ?? 0) / 100;
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
     const dx = x - c, dy = y - c, d = Math.hypot(dx, dy);
@@ -175,7 +181,7 @@ function icon(usedPct) {
     if (cov <= 0) continue;
     let ang = Math.atan2(dx, -dy); if (ang < 0) ang += Math.PI * 2;
     const on = ang / (Math.PI * 2) <= frac;
-    const [cr, cg, cb] = on ? col : [255, 255, 255];
+    const [cr, cg, cb] = on ? col : track;
     const i = (y * S + x) * 4;
     buf[i] = cr; buf[i + 1] = cg; buf[i + 2] = cb; buf[i + 3] = Math.round(255 * cov * (on ? 1 : 0.3));
   }
@@ -185,15 +191,28 @@ function icon(usedPct) {
 // ---- window ----------------------------------------------------------------
 const W = 400;
 function place(h) {
+  if (MAC) {
+    // drop down from the menu bar icon, on the display that holds it
+    const t = tray.getBounds();
+    const wa = screen.getDisplayNearestPoint({ x: Math.round(t.x + t.width / 2), y: t.y }).workArea;
+    const H = Math.max(160, Math.min(Math.ceil(h), wa.height - 12));
+    const x = t.width ? Math.round(t.x + t.width / 2 - W / 2) : wa.x + wa.width - W - 8;
+    return win.setBounds({ x: Math.max(wa.x + 8, Math.min(x, wa.x + wa.width - W - 8)), y: wa.y + 6, width: W, height: H });
+  }
   const wa = screen.getPrimaryDisplay().workArea;
   const H = Math.max(160, Math.min(Math.ceil(h), wa.height - 24));
   win.setBounds({ x: wa.x + wa.width - W - 12, y: wa.y + wa.height - H - 12, width: W, height: H });
 }
 function toggle() {
-  if (win.isVisible()) return win.hide();
+  if (win.isVisible()) return hidePanel();
   place(win.getBounds().height);
   win.show(); win.focus();
   poll(true);
+}
+// macOS: also deactivate, so focus returns to the app that had it before the panel opened
+function hidePanel() {
+  win.hide();
+  if (MAC) app.hide();
 }
 
 // ---- login / logout ----------------------------------------------------------
@@ -205,25 +224,45 @@ async function login(a) {
     catch (error) { state[a.id] = { ...a, loggedIn: false, error: error.message }; push(); }
     return;
   }
-  spawn('cmd.exe', ['/c', 'start', `"${t.loginTitle(a.id)}"`, 'cmd', '/c', `"${p.loginCmd} & echo. & echo ${t.loginDone} & pause"`],
+  if (MAC) openTerminal(t.loginTitle(a.id), p.loginCmd, p.env(home), t.loginDone);
+  else spawn('cmd.exe', ['/c', 'start', `"${t.loginTitle(a.id)}"`, 'cmd', '/c', `"${p.loginCmd} & echo. & echo ${t.loginDone} & pause"`],
     { env: { ...process.env, ...p.env(home) }, detached: true, stdio: 'ignore', windowsVerbatimArguments: true }).unref();
   const f = p.credFile(home);
-  const before = fs.existsSync(f) ? fs.statSync(f).mtimeMs : 0;
-  let n = 0;
-  const timer = setInterval(() => {
-    if ((fs.existsSync(f) && fs.statSync(f).mtimeMs > before) || ++n > 150) { clearInterval(timer); poll(true); }
+  const stamp = async () => (p.stamp ? p.stamp(home) : fs.existsSync(f) ? fs.statSync(f).mtimeMs : 0);
+  const before = await stamp();
+  let n = 0, busy = false;
+  const timer = setInterval(async () => {
+    if (busy) return;
+    busy = true;
+    const changed = await stamp().then(now => now !== before, () => true);
+    busy = false;
+    if (changed || ++n > 150) { clearInterval(timer); poll(true); }
   }, 2000);
+}
+// macOS: run the CLI login in Terminal from a self-deleting .command script in the per-user temp folder
+function openTerminal(title, command, env, done) {
+  const q = s => `'${String(s).replace(/'/g, `'\\''`)}'`;
+  const file = path.join(app.getPath('temp'), `tokenmeter-login-${Date.now()}.command`);
+  fs.writeFileSync(file, [
+    '#!/bin/sh', 'rm -f "$0"', `printf '\\033]0;%s\\007' ${q(title)}`,
+    ...Object.entries(env).map(([k, v]) => (v == null ? `unset ${k}` : `export ${k}=${q(v)}`)),
+    command, 'echo', `echo ${q(done)}`, 'read -r _',
+  ].join('\n') + '\n', { mode: 0o700 });
+  spawn('/usr/bin/open', ['-a', 'Terminal', file], { detached: true, stdio: 'ignore' }).unref();
 }
 async function logout(a) {
   const p = providers[a.type], home = providers.expand(a.home), f = p.credFile(home), t = i18n(cfg.lang);
+  const service = p.keychainService?.(home);
   suppressHide = true;
   const { response } = await dialog.showMessageBox(win, {
     type: 'warning', buttons: [t.logoutConfirm, t.cancel], defaultId: 1, cancelId: 1,
-    message: t.logoutTitle(state[a.id]?.name || a.id), detail: p.logout ? t.webLogoutDetail : t.logoutDetail(f),
+    message: t.logoutTitle(state[a.id]?.name || a.id),
+    detail: p.logout ? t.webLogoutDetail : service ? t.logoutKeychainDetail(service) : t.logoutDetail(f),
   });
   suppressHide = false;
   if (response === 0) {
     if (p.logout) await p.logout(home);
+    else if (p.clear) await p.clear(home);
     else fs.rmSync(f, { force: true });
     delete state[a.id]; delete notBefore[a.id]; poll(true);
   }
@@ -239,9 +278,11 @@ const move = (from, to) => { cfg.accounts.splice(to, 0, ...cfg.accounts.splice(f
 const popup = template => { suppressHide = true; Menu.buildFromTemplate(template).popup({ window: win, callback: () => { suppressHide = false; } }); };
 
 // ---- autostart -----------------------------------------------------------------
-const loginItem = app.isPackaged ? { path: process.execPath, args: [] } : { path: process.execPath, args: [path.resolve(__dirname)] };
+// macOS registers the app bundle itself; an unpackaged run would register Electron.app instead.
+const canAutostart = !MAC || app.isPackaged;
+const loginItem = MAC ? {} : app.isPackaged ? { path: process.execPath, args: [] } : { path: process.execPath, args: [path.resolve(__dirname)] };
 const autostart = on => app.setLoginItemSettings({ openAtLogin: on, ...loginItem });
-const isAutostart = () => app.getLoginItemSettings(loginItem).openAtLogin;
+const isAutostart = () => canAutostart && app.getLoginItemSettings(loginItem).openAtLogin;
 
 // ---- settings ----------------------------------------------------------------------
 function setHotkey(acc) {
@@ -266,7 +307,7 @@ ipcMain.handle('menu-lang', () => popup(LANG_NAMES.map(([id, label]) => ({
   label, type: 'radio', checked: cfg.lang === id, click: () => { cfg.lang = id; saveCfg(); push(); },
 }))));
 ipcMain.handle('refresh', () => poll(true));
-ipcMain.handle('hide', () => win.hide());
+ipcMain.handle('hide', () => hidePanel());
 ipcMain.handle('resize', (_, h) => place(h));
 ipcMain.handle('menu-add', () => { const t = i18n(cfg.lang); popup([
   { label: t.addCodex, click: () => addAccount('codex') },
@@ -292,13 +333,18 @@ ipcMain.handle('menu', (_, id) => {
 
 // ---- boot --------------------------------------------------------------------------
 app.whenReady().then(() => {
+  if (MAC) app.dock?.hide(); // menu bar only; packaged builds also set LSUIElement
   win = new BrowserWindow({
     // A transparent native window can stop painting after an RDP session switch,
     // even with software rendering. Keep the native surface opaque.
     width: W, height: 420, show: false, frame: false, transparent: false, resizable: false, movable: false,
+    // macOS: with no Dock icon a minimized or full-screen panel would be hard to get back
+    ...(MAC && { minimizable: false, maximizable: false, fullscreenable: false }),
     backgroundColor: cfg.theme === 'light' ? '#ffffff' : '#15161c',
     skipTaskbar: true, alwaysOnTop: true, webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });
+  // macOS: open over full-screen apps and on whichever Space is current
+  if (MAC) win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.loadFile(path.join(__dirname, 'index.html'));
   win.on('blur', () => { if (!suppressHide) win.hide(); });
   win.webContents.on('did-finish-load', push);
@@ -309,13 +355,18 @@ app.whenReady().then(() => {
 
   tray = new Tray(icon(null));
   tray.on('click', toggle);
+  if (MAC) {
+    tray.setIgnoreDoubleClickEvents(true);
+    tray.on('right-click', () => tray.popUpContextMenu(trayContext));
+    nativeTheme.on('updated', push); // redraw the icon track for the new menu bar appearance
+  }
   trayMenu();
 
   checkForUpdate();
   setInterval(checkForUpdate, 6 * 60 * 60 * 1000);
 
   if (!globalShortcut.register(cfg.hotkey, toggle)) console.error('hotkey register failed:', cfg.hotkey);
-  if (firstRun) autostart(true);
+  if (firstRun && canAutostart) autostart(true);
   app.on('second-instance', () => { if (!win.isVisible()) toggle(); });
 
   poll(true);

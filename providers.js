@@ -3,6 +3,8 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
+const keychain = require('./keychain');
 
 const HOME = os.homedir();
 const expand = p => p.replace(/^~(?=$|[\/])/, HOME).replace(/%USERPROFILE%/i, HOME);
@@ -53,30 +55,65 @@ const codex = {
   },
 };
 
+// Claude Code on macOS keeps its OAuth record in the login keychain and uses the file only as a
+// fallback. The item is "Claude Code-credentials", plus the first 8 hex digits of
+// sha256(CLAUDE_CONFIG_DIR) whenever that variable is set.
+const MAC = process.platform === 'darwin';
+const isDefaultClaudeDir = home => path.resolve(home) === path.join(HOME, '.claude');
+const keychainUser = () => {
+  const user = process.env.USER || os.userInfo().username;
+  return /^[\w.-]+$/.test(user) ? user : 'claude-code-user';
+};
 const claudeProfile = {}; // home -> cached { name, org }
 const claude = {
   credFile: home => path.join(home, '.credentials.json'),
-  env: home => ({ CLAUDE_CONFIG_DIR: home }),
+  // On macOS the default folder runs with the variable unset, so TokenMeter and a plain
+  // `claude` share one keychain item.
+  env: home => ({ CLAUDE_CONFIG_DIR: MAC && isDefaultClaudeDir(home) ? undefined : home }),
+  keychainService: home => (MAC ? 'Claude Code-credentials' + (isDefaultClaudeDir(home) ? ''
+    : '-' + createHash('sha256').update(home.normalize('NFC')).digest('hex').slice(0, 8)) : null),
   loginCmd: 'claude auth login',
-  async refresh(file, d, t = i18n('en')) {
-    const c = d.claudeAiOauth;
+  // -> { data, save(data) } for wherever the CLI keeps this account, or null
+  async load(home) {
+    const service = this.keychainService(home);
+    if (service) {
+      const data = await keychain.readJson(service);
+      if (data) {
+        return { data, save: async d => keychain.writeJson(service, (await keychain.attributes(service))?.account || keychainUser(), d) };
+      }
+    }
+    const file = this.credFile(home), data = readJson(file);
+    return data && { data, save: async d => writeJson(file, d) };
+  },
+  // Changes when a login stores new credentials; the keychain stamp needs no secret.
+  async stamp(home) {
+    const service = this.keychainService(home), file = this.credFile(home);
+    const modified = service ? (await keychain.attributes(service))?.modified : '';
+    return `${modified || ''}|${fs.existsSync(file) ? fs.statSync(file).mtimeMs : 0}`;
+  },
+  async clear(home) {
+    const service = this.keychainService(home);
+    if (service) await keychain.remove(service);
+    fs.rmSync(this.credFile(home), { force: true });
+  },
+  async refresh(store, t = i18n('en')) {
+    const c = store.data.claudeAiOauth;
     const j = await postJson('https://console.anthropic.com/v1/oauth/token', {
       grant_type: 'refresh_token', refresh_token: c.refreshToken, client_id: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
     }, t);
     Object.assign(c, { accessToken: j.access_token, refreshToken: j.refresh_token || c.refreshToken, expiresAt: Date.now() + j.expires_in * 1000 });
-    writeJson(file, d);
+    await store.save(store.data);
     return c;
   },
   async fetch(home, lang = 'en') {
     const t = i18n(lang);
-    const file = this.credFile(home);
-    const d = readJson(file);
-    let c = d?.claudeAiOauth;
+    const store = await this.load(home);
+    let c = store?.data.claudeAiOauth;
     if (!c?.accessToken) return { loggedIn: false };
-    if (c.expiresAt < Date.now() + 60_000) c = await this.refresh(file, d, t);
+    if (c.expiresAt < Date.now() + 60_000) c = await this.refresh(store, t);
     const headers = () => ({ Authorization: `Bearer ${c.accessToken}`, 'anthropic-beta': 'oauth-2025-04-20' });
     let r = await fetch('https://api.anthropic.com/api/oauth/usage', { headers: headers() });
-    if (r.status === 401) { c = await this.refresh(file, d, t); r = await fetch('https://api.anthropic.com/api/oauth/usage', { headers: headers() }); }
+    if (r.status === 401) { c = await this.refresh(store, t); r = await fetch('https://api.anthropic.com/api/oauth/usage', { headers: headers() }); }
     if (r.status === 429) throw Object.assign(new Error('rate limited'), { retryAfter: +r.headers.get('retry-after') || 60 });
     if (!r.ok) throw new Error(t.usageApiFailed(r.status));
     const j = await r.json();
