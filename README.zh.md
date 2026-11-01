@@ -7,8 +7,9 @@
 **在 Windows 托盘或 macOS 菜单栏中，一览你的 AI 订阅额度。**
 
 <p>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="下载 Windows x64 版 TokenMeter"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-macOS-000000?style=for-the-badge" alt="下载 macOS 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="下载 Windows x64 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="下载 Apple 芯片 Mac 版 TokenMeter"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="下载 Intel Mac 版 TokenMeter"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="最新发布版本"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="GitHub Release 累计下载量"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub Stars"></a>
@@ -37,9 +38,22 @@ TokenMeter 是 Windows 托盘及 macOS 菜单栏应用，可在一处查看 Code
 | **按需设置** | 切换深色与浅色主题、中文／English／한국어，设置快捷键及开机自启动（macOS 为登录时打开）。 |
 | **自行选择更新** | 收到新版本通知后，可从托盘或菜单栏图标的菜单启动已验证安装包的更新。 |
 
+## 下载
+
+| 平台 | 文件 |
+|---|---|
+| Windows 10 / 11（x64） | [TokenMeter-Setup-1.4.0.exe](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe) |
+| macOS 13 及以上 · Apple 芯片 | [TokenMeter-1.4.0-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg) |
+| macOS 13 及以上 · Intel | [TokenMeter-1.4.0-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg) |
+
+不确定是哪种 Mac？在苹果菜单 →**关于本机**中，显示 Apple 芯片即为 Apple 芯片，显示 Intel 处理器即为 Intel。
+所有版本和文件都在 [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) 页面；安装后有新版本时应用会提示。
+
 ## 快速开始
 
-1. 在 Windows 10 或 11（x64）上，从[最新版本](https://github.com/HSoo-Kim/TokenMeter/releases/latest)下载 `TokenMeter-Setup-<版本>.exe`。
+### Windows
+
+1. 在 Windows 10 或 11（x64）上，从[下载](#下载)获取 `TokenMeter-Setup-1.4.0.exe`。
 2. 运行安装包。应用安装在当前用户下，无需管理员权限，并可选择安装目录。
 3. 点击托盘图标或按 `Ctrl+Alt+U` 打开面板，通过 `+` 添加账号。登录 Codex 或 Claude 需安装对应的 [`codex`](https://developers.openai.com/codex/cli) 或 [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI。
 
@@ -48,7 +62,7 @@ TokenMeter 是 Windows 托盘及 macOS 菜单栏应用，可在一处查看 Code
 
 ### macOS
 
-1. 在 macOS 13 或更高版本上，从[最新版本](https://github.com/HSoo-Kim/TokenMeter/releases/latest)下载 `TokenMeter-<版本>-mac-arm64.dmg`（Apple 芯片）或 `TokenMeter-<版本>-mac-x64.dmg`（Intel）。
+1. 从[下载](#下载)获取与你的 Mac 对应的磁盘映像；需要 macOS 13 或更高版本。
 2. 打开磁盘映像，把 TokenMeter 拖到“应用程序”文件夹。
 3. 点击菜单栏中的环形图标或按 `⌃⌥U`（Control+Option+U）打开面板；右键点击图标显示菜单。TokenMeter 没有程序坞图标。
 4. 通过 `+` 添加账号。登录 Codex 或 Claude 需要与 Windows 相同的 `codex` 或 `claude` CLI，登录在“终端”中进行。

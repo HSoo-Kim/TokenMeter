@@ -7,8 +7,9 @@
 **Your AI subscription limits, together in the Windows tray or the macOS menu bar.**
 
 <p>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
-  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/badge/Download-macOS-000000?style=for-the-badge" alt="Download TokenMeter for macOS"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe"><img src="https://img.shields.io/badge/Download-Windows%20x64-000000?style=for-the-badge" alt="Download TokenMeter for Windows x64"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Apple%20silicon-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Apple silicon"></a>
+  <a href="https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg"><img src="https://img.shields.io/badge/Download-macOS%20Intel-000000?style=for-the-badge" alt="Download TokenMeter for macOS on Intel"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases/latest"><img src="https://img.shields.io/github/v/release/HSoo-Kim/TokenMeter?style=for-the-badge&label=Release&color=007ec6" alt="Latest release"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/releases"><img src="https://img.shields.io/github/downloads/HSoo-Kim/TokenMeter/total?style=for-the-badge&label=Downloads&color=1E90FF" alt="Total GitHub release downloads"></a>
   <a href="https://github.com/HSoo-Kim/TokenMeter/stargazers"><img src="https://img.shields.io/github/stars/HSoo-Kim/TokenMeter?style=for-the-badge&label=Stars&logo=github&logoColor=white&color=000000" alt="GitHub stars"></a>
@@ -37,9 +38,23 @@ quota without opening each service. Limits and reset times depend on what each p
 | **Make it yours** | Switch between dark and light themes, choose English, Korean or Chinese, change the shortcut and start with Windows or at macOS login. |
 | **Updates on your terms** | Get a new-version notification and start a verified installer from the tray or menu bar icon. |
 
+## Download
+
+| Platform | File |
+|---|---|
+| Windows 10 / 11 (x64) | [TokenMeter-Setup-1.4.0.exe](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-Setup-1.4.0.exe) |
+| macOS 13+ · Apple silicon | [TokenMeter-1.4.0-mac-arm64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-arm64.dmg) |
+| macOS 13+ · Intel | [TokenMeter-1.4.0-mac-x64.dmg](https://github.com/HSoo-Kim/TokenMeter/releases/download/v1.4.0/TokenMeter-1.4.0-mac-x64.dmg) |
+
+Not sure which Mac you have? Apple menu → **About This Mac** lists an Apple chip (Apple silicon) or an Intel processor.
+Every version and file is on the [Releases](https://github.com/HSoo-Kim/TokenMeter/releases) page; once installed,
+TokenMeter tells you when a newer version is out.
+
 ## Quick Start
 
-1. On Windows 10 or 11 (x64), download `TokenMeter-Setup-<version>.exe` from the [latest release](https://github.com/HSoo-Kim/TokenMeter/releases/latest).
+### Windows
+
+1. Download `TokenMeter-Setup-1.4.0.exe` from [Download](#download) on Windows 10 or 11 (x64).
 2. Run the installer. It installs per user without administrator rights and lets you choose the install folder.
 3. Click the tray icon or press `Ctrl+Alt+U`; use `+` to add an account. For Codex or Claude login, install the corresponding [`codex`](https://developers.openai.com/codex/cli) or [`claude`](https://docs.claude.com/en/docs/claude-code/overview) CLI.
 
@@ -48,7 +63,7 @@ The installer is unsigned, so Windows SmartScreen may show “Windows protected 
 
 ### macOS
 
-1. On macOS 13 or later, download `TokenMeter-<version>-mac-arm64.dmg` (Apple silicon) or `TokenMeter-<version>-mac-x64.dmg` (Intel) from the [latest release](https://github.com/HSoo-Kim/TokenMeter/releases/latest).
+1. Download the disk image for your Mac from [Download](#download); macOS 13 or later is required.
 2. Open the disk image and drag TokenMeter into Applications.
 3. Click the ring in the menu bar or press `⌃⌥U` (Control+Option+U); right-click the ring for the menu. TokenMeter has no Dock icon.
 4. Use `+` to add an account. Codex and Claude login need the same `codex` or `claude` CLI as on Windows; it runs in Terminal.
